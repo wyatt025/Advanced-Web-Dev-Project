@@ -1,0 +1,49 @@
+<%- include('partials/header') %>
+
+<!-- Hero Section -->
+<header class="bg-dark text-white text-center py-5">
+  <div class="container py-4">
+    <h1 class="display-4 fw-bold">About Our Company</h1>
+    <p class="lead text-muted mb-0">Building the future of web applications, one template at a time.</p>
+  </div>
+</header>
+
+<!-- Company Mission & Vision -->
+<main class="container my-5 py-3 flex-grow-1">
+  <div class="row g-4 justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card h-100 border-0 shadow-sm p-4">
+        <h2 class="h4 text-primary fw-semibold mb-3">Our Mission</h2>
+        <p class="text-secondary mb-0">To provide developers and businesses with scalable, high-performance web solutions that streamline their workflows and elevate user experiences globally.</p>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-5">
+      <div class="card h-100 border-0 shadow-sm p-4">
+        <h2 class="h4 text-success fw-semibold mb-3">Our Vision</h2>
+        <p class="text-secondary mb-0">We envision a world where building robust applications is accessible, intuitive, and highly efficient for development teams of all shapes and sizes.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meet the Team Section (Iterated via EJS Loop) -->
+  <section class="mt-5 pt-4">
+    <h2 class="text-center fw-bold mb-4">Meet Our Team</h2>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+      
+      <% teamMembers.forEach(member => { %>
+        <div class="col">
+          <div class="card h-100 border-0 shadow-sm text-center">
+            <img src="<%= member.image %>" class="card-img-top object-fit-cover" style="height: 260px;" alt="<%= member.name %>">
+            <div class="card-body">
+              <h5 class="card-title fw-bold mb-1"><%= member.name %></h5>
+              <p class="card-text text-muted small"><%= member.role %></p>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer') %>
