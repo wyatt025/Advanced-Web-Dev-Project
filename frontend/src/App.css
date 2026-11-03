@@ -1,3 +1,30 @@
+.movie-catalog {
+  width: 100%;
+  padding: 28px;
+  box-sizing: border-box;
+}
+
+.movie-catalog h1 {
+  margin: 12px 0 28px;
+  color: var(--gold);
+  text-align: left;
+  padding-bottom: 10px;
+}
+
+.movie-catalog__grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 24px;
+  padding-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .movie-catalog {
+    padding: 20px 16px;
+  }
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;

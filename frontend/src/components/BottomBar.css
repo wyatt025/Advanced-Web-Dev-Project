@@ -1,0 +1,29 @@
+.bottom-bar {
+  display: flex;
+  justify-content: space-around;
+  gap: 24px;
+  padding: 28px;
+  border-top: 1px solid var(--gold);
+  background: #111;
+  text-align: left;
+}
+
+.bottom-bar__item h2 {
+  margin: 0 0 8px;
+  color: var(--gold);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.bottom-bar__item p {
+  color: var(--text);
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .bottom-bar {
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 20px;
+  }
+}
