@@ -12,6 +12,8 @@ Admin should also be able to view all admins and get details of a specific admin
 //--------- NOTE: FUNCTIONS WILL NEED UPDATING ONCE DATABASE SCHEMA IS FINALIZED
 
 const adminModel = {
+
+//----- Admin Management -----------
     getAllAdmins: async () => {
         const result = await query('SELECT * FROM users where role = $1', ['admin']);
         return result.rows;
@@ -38,6 +40,8 @@ const adminModel = {
         const result = await query('DELETE FROM users WHERE id = $1 AND role = $2 RETURNING *', [id, 'admin']);
         return result.rows[0];
     },
+
+//----- Movie Management -----------
     getAllMovies: async () => {
         const result = await query('SELECT * FROM movies');
         return result.rows;
@@ -64,32 +68,44 @@ const adminModel = {
         const result = await query('DELETE FROM movies WHERE id = $1 RETURNING *', [id]);
         return result.rows[0];
     },
+
+//----- Employee Management -----------
     getAllEmployees: async () => {
-        const result = await query('SELECT * FROM employees');
+        const result = await query('SELECT * FROM users WHERE role = $1', ['employee']);
         return result.rows;
     },
     getEmployeeById: async (id) => {
-        const result = await query('SELECT * FROM employees WHERE id = $1', [id]);
+        const result = await query('SELECT * FROM users WHERE id = $1 AND role = $2', [id, 'employee']);
         return result.rows[0];
     },
     createEmployee: async (employee) => {
         const result = await query(
-            'INSERT INTO employees (name, email, position) VALUES ($1, $2, $3) RETURNING *',
-            [employee.name, employee.email, employee.position]
+            'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING *',
+            [employee.username, employee.password, 'employee']
         );
         return result.rows[0];
     },
     updateEmployee: async (id, employee) => {
         const result = await query(
-            'UPDATE employees SET name = $1, email = $2, position = $3 WHERE id = $4 RETURNING *',
-            [employee.name, employee.email, employee.position, id]
+            'UPDATE users SET username = $1, password = $2 WHERE id = $3 AND role = $4 RETURNING *',
+            [employee.username, employee.password, id, 'employee']
         );
         return result.rows[0];
     },
     deleteEmployee: async (id) => {
-        const result = await query('DELETE FROM employees WHERE id = $1 RETURNING *', [id]);
+        const result = await query('DELETE FROM users WHERE id = $1 AND role = $2 RETURNING *', [id, 'employee']);
         return result.rows[0];
-    }
+    },
+
+//----- Registered Users Management -----------
+    deleteUserById: async (id) => {
+        const result = await query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+        return result.rows[0];
+    },
+    deleteUserByUsername: async (username) => {
+        const result = await query('DELETE FROM users WHERE username = $1 RETURNING *', [username]);
+        return result.rows[0];
+    },
 };
 
 module.exports = adminModel;

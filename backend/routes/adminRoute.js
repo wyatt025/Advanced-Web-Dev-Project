@@ -18,7 +18,7 @@ Admin should also be able to view all admins and get details of a specific admin
 //-------- NOTE: ROUTES MAY NEED UPDATING ONCE DATABASE SCHEMA IS FINALIZED
 
 
-//admin management routes
+//----- Admin Management Routes -----------
 adminRouter.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -45,6 +45,8 @@ adminRouter.get('/', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+//----- Admin Management Routes -----------
 
 adminRouter.get('/:id', async (req, res) => {
     try {
@@ -101,7 +103,7 @@ adminRouter.delete('/:id', async (req, res) => {
 });
 
 
-//movie management routes
+//----- Movie Management Routes -----------
 adminRouter.get('/movies', async (req, res) => {
     try {
         const result = await adminModel.getAllMovies();
@@ -159,7 +161,7 @@ adminRouter.delete('/movies/:id', async (req, res) => {
     }
 });
 
-//employee management routes
+//----- Employee Management Routes -----------
 adminRouter.get('/employees', async (req, res) => {
     try {
         const result = await adminModel.getAllEmployees();
@@ -207,6 +209,33 @@ adminRouter.delete('/employees/:id', async (req, res) => {
             res.json({ message: 'Employee deleted successfully' });
         } else {
             res.status(404).json({ error: 'Employee not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+//----- Registered Users Management Routes -----------
+adminRouter.delete('/users/:id', async (req, res) => {
+    try {
+        const result = await adminModel.deleteUserById(req.params.id);
+        if (result) {
+            res.json({ message: 'User deleted successfully' });
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+adminRouter.delete('/users/username/:username', async (req, res) => {
+    try {
+        const result = await adminModel.deleteUserByUsername(req.params.username);
+        if (result) {
+            res.json({ message: 'User deleted successfully' });
+        } else {
+            res.status(404).json({ error: 'User not found' });
         }
     } catch (err) {
         res.status(500).json({ error: err.message });
