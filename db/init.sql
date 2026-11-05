@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `username` VARCHAR(255) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,              -- store a hash (argon2/bcrypt), never plaintext
-  `email` VARCHAR(255) NOT NULL,
+  `email` VARCHAR(255),
   `phone` VARCHAR(50),
   `role` ENUM('user','employee','admin') NOT NULL DEFAULT 'user',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -124,11 +124,11 @@ GRANT SELECT ON riocinemadb.screenings          TO 'role_public';
 
 -- Registered: public + own data via procedures only
 GRANT 'role_public' TO 'role_registered';
-GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_profile        TO 'role_registered';
-GRANT EXECUTE ON PROCEDURE riocinemadb.sp_update_my_username    TO 'role_registered';
-GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_reservations   TO 'role_registered';
-GRANT EXECUTE ON PROCEDURE riocinemadb.sp_create_my_reservation TO 'role_registered';
-GRANT EXECUTE ON PROCEDURE riocinemadb.sp_cancel_my_reservation TO 'role_registered';
+-- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_profile        TO 'role_registered';
+-- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_update_my_username    TO 'role_registered';
+-- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_reservations   TO 'role_registered';
+-- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_create_my_reservation TO 'role_registered';
+-- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_cancel_my_reservation TO 'role_registered';
 
 -- Employee: registered + manage reservations, see basic user info (no passwords)
 GRANT 'role_registered' TO 'role_employee';
@@ -166,3 +166,5 @@ GRANT 'role_auth'       TO 'app_auth'@'%';
 SET DEFAULT ROLE ALL TO
   'app_public'@'%', 'app_registered'@'%', 'app_employee'@'%',
   'app_admin'@'%', 'app_auth'@'%';
+
+FLUSH PRIVILEGES;
