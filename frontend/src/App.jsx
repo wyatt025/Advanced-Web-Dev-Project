@@ -5,6 +5,7 @@ import { Route, Routes } from 'react-router-dom'
 import AboutPage from './pages/AboutPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import AdminDashboard from './pages/AdminDashboard.jsx'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/movies" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<HomePage />} />
       </Routes>
       <BottomBar />
