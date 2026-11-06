@@ -81,10 +81,6 @@ function AdminDashboard() {
                 <input type="radio" name="showtime" value="18:30" />
                 <span>6:30 PM</span>
               </label>
-              <label>
-                <input type="radio" name="showtime" value="20:45" />
-                <span>8:45 PM</span>
-              </label>
             </fieldset>
           </div>
 
