@@ -1,110 +1,131 @@
-const query = require('../db');  //this will need to be updated later once the database connection is finalized
+const pools = require('../helpers/db');
 
-/*
-Admin needs to be able to add new movies to the database using the external API.
-Admin should also be able to update and delete movies from the database.
-Admin should also be able to view all movies and get details of a specific movie.
-Admin should also be able to manage employees in the system. This includes adding, updating, and deleting employee records.
-Admin should also be able to view all employees and get details of a specific employee.
-Admin should also be able to view all admins and get details of a specific admin.
- */
+const userFields = 'id, name, email, phone, role, created_at';
+const movieFields = [
+    'price', 'imdb_id', 'title', 'release_year', 'rated', 'released_date',
+    'runtime_minutes', 'genre', 'director', 'writer', 'actors', 'plot',
+    'languages', 'poster_url', 'rating_imdb', 'rating_rotten_tomatoes',
+    'rating_metacritic',
+];
 
-//--------- NOTE: FUNCTIONS WILL NEED UPDATING ONCE DATABASE SCHEMA IS FINALIZED
+async function getUsersByRole(role) {
+    const [rows] = await pools.admin.execute(
+        `SELECT ${userFields} FROM users WHERE role = ?`, [role]
+    );
+    return rows;
+}
+
+async function getUserById(id, role) {
+    const [rows] = await pools.admin.execute(
+        `SELECT ${userFields} FROM users WHERE id = ? AND role = ?`, [id, role]
+    );
+    return rows[0];
+}
+
+async function createUser(user, role) {
+    // DB schema: role_admin lacks user INSERT privileges; this uses role_auth.
+    const [result] = await pools.auth.execute(
+        'INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)',
+        [user.name, user.email, user.phone ?? null, user.password, role]
+    );
+    return getUserById(result.insertId, role);
+}
+
+async function updateUser(id, user, role) {
+    const fields = ['name', 'email', 'phone', 'password'].filter(
+        field => user[field] !== undefined
+    );
+    if (fields.length === 0) {
+        return getUserById(id, role);
+    }
+
+    // DB schema: role_admin lacks user UPDATE privileges; this uses role_auth.
+    const [result] = await pools.auth.execute(
+        `UPDATE users SET ${fields.map(field => `${field} = ?`).join(', ')} WHERE id = ? AND role = ?`,
+        [...fields.map(field => user[field]), id, role]
+    );
+    return result.affectedRows ? getUserById(id, role) : undefined;
+}
+
+async function deleteUser(id, role) {
+    // DB schema: grant DELETE on users under role_admin for these routes.
+    const [result] = await pools.admin.execute(
+        'DELETE FROM users WHERE id = ? AND role = ?', [id, role]
+    );
+    return result.affectedRows > 0;
+}
+
+async function getMovieById(id) {
+    const [rows] = await pools.admin.execute('SELECT * FROM movies WHERE id = ?', [id]);
+    return rows[0];
+}
 
 const adminModel = {
-
 //----- Admin Management -----------
-    getAllAdmins: async () => {
-        const result = await query('SELECT * FROM users where role = $1', ['admin']);
-        return result.rows;
-    },
-    getAdminById: async (id) => {
-        const result = await query('SELECT * FROM users WHERE id = $1 AND role = $2', [id, 'admin']);
-        return result.rows[0];
-    },
-    createAdmin: async (admin) => {
-        const result = await query(
-            'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING *',
-            [admin.username, admin.password, 'admin']
+    getAdminForLogin: async (email) => {
+        const [rows] = await pools.auth.execute(
+            'SELECT id, password FROM users WHERE email = ? AND role = ?',
+            [email, 'admin']
         );
-        return result.rows[0];
+        return rows[0];
     },
-    updateAdmin: async (id, admin) => {
-        const result = await query(
-            'UPDATE users SET username = $1, password = $2 WHERE id = $3 AND role = $4 RETURNING *',
-            [admin.username, admin.password, id, 'admin']
-        );
-        return result.rows[0];
-    },
-    deleteAdmin: async (id) => {
-        const result = await query('DELETE FROM users WHERE id = $1 AND role = $2 RETURNING *', [id, 'admin']);
-        return result.rows[0];
-    },
+
+    getAllAdmins: () => getUsersByRole('admin'),
+    getAdminById: (id) => getUserById(id, 'admin'),
+    createAdmin: (admin) => createUser(admin, 'admin'),
+    updateAdmin: (id, admin) => updateUser(id, admin, 'admin'),
+    deleteAdmin: (id) => deleteUser(id, 'admin'),
 
 //----- Movie Management -----------
     getAllMovies: async () => {
-        const result = await query('SELECT * FROM movies');
-        return result.rows;
+        const [rows] = await pools.admin.execute('SELECT * FROM movies');
+        return rows;
     },
-    getMovieById: async (id) => {
-        const result = await query('SELECT * FROM movies WHERE id = $1', [id]);
-        return result.rows[0];
-    },
+    getMovieById,
     createMovie: async (movie) => {
-        const result = await query(
-            'INSERT INTO movies (title, description, release_date) VALUES ($1, $2, $3) RETURNING *',
-            [movie.title, movie.description, movie.release_date]
+        const fields = movieFields.filter(field => movie[field] !== undefined);
+        const [result] = await pools.admin.execute(
+            `INSERT INTO movies (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`,
+            fields.map(field => movie[field])
         );
-        return result.rows[0];
+        return getMovieById(result.insertId);
     },
     updateMovie: async (id, movie) => {
-        const result = await query(
-            'UPDATE movies SET title = $1, description = $2, release_date = $3 WHERE id = $4 RETURNING *',
-            [movie.title, movie.description, movie.release_date, id]
+        const fields = movieFields.filter(field => movie[field] !== undefined);
+        if (fields.length === 0) {
+            return getMovieById(id);
+        }
+        const [result] = await pools.admin.execute(
+            `UPDATE movies SET ${fields.map(field => `${field} = ?`).join(', ')} WHERE id = ?`,
+            [...fields.map(field => movie[field]), id]
         );
-        return result.rows[0];
+        return result.affectedRows ? getMovieById(id) : undefined;
     },
     deleteMovie: async (id) => {
-        const result = await query('DELETE FROM movies WHERE id = $1 RETURNING *', [id]);
-        return result.rows[0];
+        const [result] = await pools.admin.execute('DELETE FROM movies WHERE id = ?', [id]);
+        return result.affectedRows > 0;
     },
 
 //----- Employee Management -----------
-    getAllEmployees: async () => {
-        const result = await query('SELECT * FROM users WHERE role = $1', ['employee']);
-        return result.rows;
-    },
-    getEmployeeById: async (id) => {
-        const result = await query('SELECT * FROM users WHERE id = $1 AND role = $2', [id, 'employee']);
-        return result.rows[0];
-    },
-    createEmployee: async (employee) => {
-        const result = await query(
-            'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING *',
-            [employee.username, employee.password, 'employee']
-        );
-        return result.rows[0];
-    },
-    updateEmployee: async (id, employee) => {
-        const result = await query(
-            'UPDATE users SET username = $1, password = $2 WHERE id = $3 AND role = $4 RETURNING *',
-            [employee.username, employee.password, id, 'employee']
-        );
-        return result.rows[0];
-    },
-    deleteEmployee: async (id) => {
-        const result = await query('DELETE FROM users WHERE id = $1 AND role = $2 RETURNING *', [id, 'employee']);
-        return result.rows[0];
-    },
+    getAllEmployees: () => getUsersByRole('employee'),
+    getEmployeeById: (id) => getUserById(id, 'employee'),
+    createEmployee: (employee) => createUser(employee, 'employee'),
+    updateEmployee: (id, employee) => updateUser(id, employee, 'employee'),
+    deleteEmployee: (id) => deleteUser(id, 'employee'),
 
 //----- Registered Users Management -----------
-    deleteUserById: async (id) => {
-        const result = await query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
-        return result.rows[0];
-    },
-    deleteUserByUsername: async (username) => {
-        const result = await query('DELETE FROM users WHERE username = $1 RETURNING *', [username]);
-        return result.rows[0];
+    deleteUserById: (id) => deleteUser(id, 'user'),
+    deleteUserByName: async (name) => {
+        // DB schema: users.name is not unique; reject ambiguous matches.
+        const [rows] = await pools.admin.execute(
+            'SELECT id FROM users WHERE name = ? AND role = ?', [name, 'user']
+        );
+        if (rows.length > 1) {
+            const error = new Error('Multiple users have this name; delete by ID instead');
+            error.code = 'AMBIGUOUS_USER_NAME';
+            throw error;
+        }
+        return rows.length === 1 ? deleteUser(rows[0].id, 'user') : false;
     },
 };
 
