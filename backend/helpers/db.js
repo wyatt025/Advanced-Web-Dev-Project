@@ -9,11 +9,11 @@ const poolConfig = {
 };
 
 const pools = {
-  public: mysql.createPool({ ...poolConfig, user: 'app_public', password: 'CHANGE_ME_1' }),
-  registered: mysql.createPool({ ...poolConfig, user: 'app_registered', password: 'CHANGE_ME_2' }),
-  employee: mysql.createPool({ ...poolConfig, user: 'app_employee', password: 'CHANGE_ME_3' }),
-  admin: mysql.createPool({ ...poolConfig, user: 'app_admin', password: 'CHANGE_ME_4' }),
-  auth: mysql.createPool({ ...poolConfig, user: 'app_auth', password: 'CHANGE_ME_5' }),
+  public: mysql.createPool({ ...poolConfig, user: 'app_public', password: process.env.APP_PUBLIC_PASS}),
+  registered: mysql.createPool({ ...poolConfig, user: 'app_registered', password: process.env.APP_REGISTERED_PASS}),
+  employee: mysql.createPool({ ...poolConfig, user: 'app_employee', password: process.env.APP_EMPLOYEE_PASS}),
+  admin: mysql.createPool({ ...poolConfig, user: 'app_admin', password: process.env.APP_ADMIN_PASS}),
+  auth: mysql.createPool({ ...poolConfig, user: 'app_auth', password: process.env.APP_AUTH_PASS}),
 };
 
 // --- QUICK CONNECTION TESTER ---

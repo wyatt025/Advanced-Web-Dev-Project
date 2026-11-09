@@ -6,12 +6,12 @@ USE riocinemadb;
 -- TABLES
 -- ============================================================
 
--- id, username, password, role, created_at
+-- id, name, password, role, created_at
 CREATE TABLE IF NOT EXISTS `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `username` VARCHAR(255) NOT NULL UNIQUE,
+  `name` VARCHAR(255) NOT NULL,
   `password` VARCHAR(255) NOT NULL,              -- store a hash (argon2/bcrypt), never plaintext
-  `email` VARCHAR(255),
+  `email` VARCHAR(255) NOT NULL UNIQUE,
   `phone` VARCHAR(50),
   `role` ENUM('user','employee','admin') NOT NULL DEFAULT 'user',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -125,7 +125,7 @@ GRANT SELECT ON riocinemadb.screenings          TO 'role_public';
 -- Registered: public + own data via procedures only
 GRANT 'role_public' TO 'role_registered';
 -- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_profile        TO 'role_registered';
--- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_update_my_username    TO 'role_registered';
+-- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_update_my_name    TO 'role_registered';
 -- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_reservations   TO 'role_registered';
 -- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_create_my_reservation TO 'role_registered';
 -- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_cancel_my_reservation TO 'role_registered';
@@ -133,7 +133,7 @@ GRANT 'role_public' TO 'role_registered';
 -- Employee: registered + manage reservations, see basic user info (no passwords)
 GRANT 'role_registered' TO 'role_employee';
 GRANT SELECT, INSERT, UPDATE, DELETE ON riocinemadb.reservations TO 'role_employee';
-GRANT SELECT (id, username, email, phone, role, created_at) ON riocinemadb.users TO 'role_employee';
+GRANT SELECT (id, name, email, phone, role, created_at) ON riocinemadb.users TO 'role_employee';
 
 -- Admin: employee + manage movies/screenings/cinemas/auditoriums
 GRANT 'role_employee' TO 'role_admin';
@@ -143,19 +143,19 @@ GRANT INSERT, UPDATE, DELETE ON riocinemadb.cinemas     TO 'role_admin';
 GRANT INSERT, UPDATE, DELETE ON riocinemadb.auditoriums TO 'role_admin';
 
 -- Auth: password lookup, registration, payment confirmation. Nothing else.
-GRANT SELECT (id, username, password, role) ON riocinemadb.users TO 'role_auth';
-GRANT INSERT (username, password)           ON riocinemadb.users TO 'role_auth';
-GRANT UPDATE (password)                     ON riocinemadb.users TO 'role_auth';
-GRANT SELECT (id, isPaid), UPDATE (isPaid)  ON riocinemadb.reservations TO 'role_auth';
+GRANT SELECT (id, name, email, phone, password, role) ON riocinemadb.users TO 'role_auth';
+GRANT INSERT (name, password, email, phone, role)    ON riocinemadb.users TO 'role_auth';
+GRANT UPDATE (password, phone, email, name)          ON riocinemadb.users TO 'role_auth';
+GRANT SELECT (id, isPaid), UPDATE (isPaid)               ON riocinemadb.reservations TO 'role_auth';
 
 -- ============================================================
 -- ACCOUNTS (change passwords; restrict '%' to your app server's host)
 -- ============================================================
-CREATE USER IF NOT EXISTS 'app_public'@'%'     IDENTIFIED BY 'CHANGE_ME_1';
-CREATE USER IF NOT EXISTS 'app_registered'@'%' IDENTIFIED BY 'CHANGE_ME_2';
-CREATE USER IF NOT EXISTS 'app_employee'@'%'   IDENTIFIED BY 'CHANGE_ME_3';
-CREATE USER IF NOT EXISTS 'app_admin'@'%'      IDENTIFIED BY 'CHANGE_ME_4';
-CREATE USER IF NOT EXISTS 'app_auth'@'%'       IDENTIFIED BY 'CHANGE_ME_5';
+CREATE USER IF NOT EXISTS 'app_public'@'%' IDENTIFIED BY '${APP_PUBLIC_PASS}';
+CREATE USER IF NOT EXISTS 'app_registered'@'%' IDENTIFIED BY '${APP_REGISTERED_PASS}';
+CREATE USER IF NOT EXISTS 'app_employee'@'%' IDENTIFIED BY '${APP_EMPLOYEE_PASS}';
+CREATE USER IF NOT EXISTS 'app_admin'@'%' IDENTIFIED BY '${APP_ADMIN_PASS}';
+CREATE USER IF NOT EXISTS 'app_auth'@'%' IDENTIFIED BY '${APP_AUTH_PASS}';
 
 GRANT 'role_public'     TO 'app_public'@'%';
 GRANT 'role_registered' TO 'app_registered'@'%';
