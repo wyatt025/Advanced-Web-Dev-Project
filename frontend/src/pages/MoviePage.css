@@ -1,0 +1,143 @@
+.movie-page {
+  flex: 1;
+  width: 100%;
+  padding: 32px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.movie-page__back {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: var(--gold);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.movie-page__back:hover {
+  color: var(--text-h);
+}
+
+.movie-page__back:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
+.movie-detail {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-top: 20px;
+}
+
+.movie-detail__poster {
+  display: grid;
+  min-height: 440px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #1b1b1b;
+  color: var(--text);
+}
+
+.movie-detail__content {
+  padding: 16px 0;
+}
+
+.movie-detail__eyebrow {
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.movie-detail__content h1 {
+  margin: 8px 0 16px;
+  color: var(--text-h);
+  font-size: 40px;
+  text-align: left;
+  text-transform: capitalize;
+}
+
+.movie-detail__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.movie-detail__metadata span {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.movie-detail__ticket-button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: #fff;
+  background: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
+}
+
+.movie-detail__ticket-button:hover {
+  border-color: #a91f1f;
+  background: #a91f1f;
+}
+
+.movie-detail__ticket-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.movie-detail__section {
+  margin-top: 24px;
+}
+
+.movie-detail__section h2 {
+  margin-bottom: 8px;
+  color: var(--gold);
+  font-size: 18px;
+}
+
+.movie-detail__section p {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .movie-page {
+    padding: 24px 16px;
+  }
+
+  .movie-detail {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding-top: 0;
+  }
+
+  .movie-detail__poster {
+    min-height: 300px;
+  }
+
+  .movie-detail__content {
+    padding: 0;
+  }
+
+  .movie-detail__content h1 {
+    font-size: 32px;
+  }
+}

@@ -1,16 +1,31 @@
+import { useState } from 'react'
 import MovieBox from '../components/MovieBox.jsx'
-
-const movies = [
-  { title: 'movie 1', genre: 'action', rating: 'PG 13' },
-  { title: 'movie 2', genre: 'drama', rating: 'PG 13' },
-  { title: 'movie 3', genre: 'thriller', rating: 'R' },
-  { title: 'movie 4', genre: 'tomance', rating: 'PG' },
-]
+import movies from './movies.js'
 
 function HomePage() {
+  const [location, setLocation] = useState('Oulu')
+
   return (
     <main className="movie-catalog">
-      <h1>Now Showing</h1>
+      <header className="movie-catalog__heading">
+        <h1>Now Showing</h1>
+        <div className="movie-location" aria-label="Choose cinema location">
+          <span className="movie-location__label">Cinema</span>
+          <div className="movie-location__options">
+            {['Oulu', 'Tampere'].map((option) => (
+              <button
+                key={option}
+                className={`movie-location__button${location === option ? ' is-active' : ''}`}
+                type="button"
+                aria-pressed={location === option}
+                onClick={() => setLocation(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
       {[0, 1].map((row) => (
         <section
           className="movie-catalog__grid"
@@ -18,7 +33,7 @@ function HomePage() {
           key={row}
         >
           {movies.map((movie) => (
-            <MovieBox key={movie.title} {...movie} />
+            <MovieBox key={movie.id} {...movie} />
           ))}
         </section>
       ))}

@@ -44,22 +44,84 @@ function AdminDashboard() {
 
         <form className="admin-movie-form">
           <div className="admin-movie-picker">
-            <label className="admin-field admin-movie-picker__field">
-              Movie
-              <select name="movie" defaultValue="" aria-describedby="movie-api-note">
-                <option value="" disabled>
+            <details className="admin-movie-dropdown">
+              <summary className="admin-field">
+                Movie
+                <span className="admin-movie-dropdown__trigger">
                   Choose a movie from the catalog
-                </option>
-              </select>
-            </label>
+                </span>
+              </summary>
+              <div className="admin-movie-dropdown__content">
+                <label className="admin-field">
+                  Search movies
+                  <input
+                    type="search"
+                    name="movie-search"
+                    placeholder="Search the movie catalog..."
+                  />
+                </label>
+                <p>Movie catalog search isn't connected yet.</p>
+              </div>
+            </details>
           </div>
+
+          <details className="admin-manual-movie">
+            <summary>Enter a movie manually</summary>
+            <div className="admin-manual-movie__fields">
+              <label className="admin-field">
+                Movie title
+                <input type="text" name="manual-title" placeholder="Movie title" />
+              </label>
+              <label className="admin-field">
+                Age rating
+                <select name="manual-age-rating" defaultValue="">
+                  <option value="" disabled>
+                    Select a rating
+                  </option>
+                  <option value="S">S — Suitable for all ages</option>
+                  <option value="K-7">K-7 — Under 7s must be accompanied</option>
+                  <option value="K-12">K-12 — Under 12s must be accompanied</option>
+                  <option value="K-16">K-16 — Under 16s must be accompanied</option>
+                  <option value="K-18">K-18 — Adults only</option>
+                </select>
+              </label>
+              <label className="admin-field">
+                Actors
+                <input
+                  type="text"
+                  name="manual-actors"
+                  placeholder="Separate actor names with commas"
+                />
+              </label>
+              <label className="admin-field">
+                Genre
+                <input type="text" name="manual-genre" placeholder="e.g. Drama" />
+              </label>
+              <label className="admin-field">
+                Runtime (minutes)
+                <input
+                  type="number"
+                  name="manual-runtime"
+                  min="1"
+                  placeholder="120"
+                />
+              </label>
+              <label className="admin-field admin-manual-movie__synopsis">
+                Description
+                <textarea
+                  name="manual-description"
+                  rows="3"
+                  placeholder="Short movie synopsis"
+                />
+              </label>
+            </div>
+          </details>
 
           <div className="admin-form-divider" />
 
           <div className="admin-section-heading">
             <div>
               <h3>Showtimes</h3>
-              <p>Choose the date and available screening times</p>
             </div>
           </div>
           <div className="admin-showtimes">
@@ -89,7 +151,6 @@ function AdminDashboard() {
           <div className="admin-section-heading">
             <div>
               <h3>Ticket pricing</h3>
-              <p>Set the ticket price before adding this movie.</p>
             </div>
           </div>
           <div className="admin-pricing">
@@ -130,7 +191,6 @@ function AdminDashboard() {
         <div className="admin-panel__heading admin-reservations__heading">
           <div>
             <h2 id="reservations-title">Reservations</h2>
-            <p>Review and manage recent ticket bookings.</p>
           </div>
         </div>
 

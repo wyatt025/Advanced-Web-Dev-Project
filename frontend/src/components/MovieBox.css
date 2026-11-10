@@ -17,6 +17,18 @@
   border-color: var(--gold);
 }
 
+.movie-box__link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.movie-box__link:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
 .movie-box__poster {
   min-height: 260px;
   display: grid;

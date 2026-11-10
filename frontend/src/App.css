@@ -1,3 +1,29 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.app-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    flex-direction: column;
+  }
+}
+
 .movie-catalog {
   flex: 1;
   width: 100%;
@@ -5,11 +31,70 @@
   box-sizing: border-box;
 }
 
-.movie-catalog h1 {
+.movie-catalog__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
   margin: 12px 0 28px;
+}
+
+.movie-catalog__heading h1 {
+  margin: 0;
   color: var(--gold);
   text-align: left;
   padding-bottom: 10px;
+}
+
+.movie-location {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.movie-location__label {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.movie-location__options {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #171412;
+}
+
+.movie-location__button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.movie-location__button:hover {
+  color: var(--text-h);
+}
+
+.movie-location__button.is-active {
+  border-color: var(--gold);
+  color: #111;
+  background: var(--gold);
+}
+
+.movie-location__button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
 }
 
 .movie-catalog__grid {
@@ -42,6 +127,11 @@
 @media (max-width: 600px) {
   .movie-catalog {
     padding: 20px 16px;
+  }
+
+  .movie-catalog__heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .about-page {
