@@ -1,21 +1,11 @@
 const express = require('express');
 const adminRouter = express.Router();
 const adminModel = require('../models/admin_model');
-const bcrypt = require('bcrypt'); // for password hashing and comparison
-const jwt = require('jsonwebtoken'); // for generating and verifying JSON Web Tokens
-
-/*
-admin login needs authentication and cryptographic password handling.
-Admin needs to be able to add new movies to the database using the external API.
-Admin should also be able to update and delete movies from the database.
-Admin should also be able to view all movies and get details of a specific movie.
-Admin should also be able to manage employees in the system. This includes adding, updating, and deleting employee records.
-Admin should also be able to view all employees and get details of a specific employee.
-Admin should also be able to view all admins and get details of a specific admin.
- */
+const { authenticate, requireRole } = require('../middleware/token&roleAuth');
+const bcrypt = require('bcrypt'); 
+const jwt = require('jsonwebtoken'); 
 
 //-------- NOTE: ROUTES MAY NEED UPDATING ONCE DATABASE SCHEMA IS FINALIZED
-
 
 //----- Admin Management Routes -----------
 adminRouter.post('/login', async (req, res) => {
@@ -42,26 +32,8 @@ adminRouter.post('/login', async (req, res) => {
     }
 });
 
-adminRouter.use((req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-        return res.status(401).json({ error: 'Authorization header missing' });
-    }
-    const [scheme, token, ...extraParts] = authHeader.trim().split(/\s+/);
-    if (scheme !== 'Bearer' || !token || extraParts.length > 0) {
-        return res.status(401).json({ error: 'Authorization header must use Bearer token format' });
-    }
-    if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET is not configured');
-    }
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.adminId = decoded.id;
-        next();
-    } catch (err) {
-        res.status(401).json({ error: 'Invalid or expired token' });
-    }
-});
+adminRouter.use(authenticate);
+adminRouter.use(requireRole('admin'));
 
 adminRouter.get('/', async (req, res) => {
     try {
@@ -107,6 +79,7 @@ adminRouter.put('/:id', async (req, res) => {
     }
 });
 
+// May fail: init.sql does not grant role_admin DELETE on users.
 adminRouter.delete('/:id', async (req, res) => {
     try {
         const result = await adminModel.deleteAdmin(req.params.id);
@@ -235,6 +208,7 @@ adminRouter.put('/employees/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// May fail: init.sql does not grant role_admin DELETE on users.
 adminRouter.delete('/employees/:id', async (req, res) => {
     try {
         const result = await adminModel.deleteEmployee(req.params.id);
@@ -249,6 +223,7 @@ adminRouter.delete('/employees/:id', async (req, res) => {
 });
 
 //----- Registered Users Management Routes -----------
+// May fail: init.sql does not grant role_admin DELETE on users.
 adminRouter.delete('/users/:id', async (req, res) => {
     try {
         const result = await adminModel.deleteUserById(req.params.id);
@@ -262,6 +237,7 @@ adminRouter.delete('/users/:id', async (req, res) => {
     }
 });
 
+// May fail: init.sql does not grant role_admin DELETE on users; names can also be ambiguous.
 adminRouter.delete(['/users/name/:name', '/users/username/:name'], async (req, res) => {
     try {
         // DB schema: users.name is not unique; the username path is retained for compatibility.
