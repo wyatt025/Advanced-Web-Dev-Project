@@ -34,9 +34,12 @@ function MoviePage() {
             <span>Age rating: {movie.rating}</span>
             <span>Auditorium {movie.auditorium}</span>
           </div>
-          <button className="movie-detail__ticket-button" type="button">
+          <Link
+            className="movie-detail__ticket-button"
+            to={`/movies/${movie.id}/tickets`}
+          >
             Buy a ticket
-          </button>
+          </Link>
           <div className="movie-detail__section">
             <h2>About the movie</h2>
             <p>Details about the movie</p>

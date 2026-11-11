@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
 import MoviePage from './pages/MoviePage.jsx'
+import TicketPage from './pages/TicketPage.jsx'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/movies/:movieId/tickets" element={<TicketPage />} />
             <Route path="/movies/:movieId" element={<MoviePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/movies" element={<HomePage />} />
