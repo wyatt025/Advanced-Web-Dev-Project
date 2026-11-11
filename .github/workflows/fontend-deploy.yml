@@ -29,6 +29,8 @@ jobs:
           oc: "4"
 
       - name: Deploy to Rahti
+        env:
+          RAHTI_PROJECT: ${{ secrets.RAHTI_PROJECT }}
         run: |
           oc login --token=${{ secrets.RAHTI_TOKEN }} --server=${{ secrets.RAHTI_SERVER }}
           oc project "$RAHTI_PROJECT"
