@@ -1,0 +1,43 @@
+export async function login(email, password) {
+    const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+    });
+
+    if (response.status === 401) {
+        throw new Error('Invalid email or password.');
+    }
+    if (!response.ok) {
+        throw new Error('Login is unavailable. Please try again.');
+    }
+    return response.json();
+}
+export async function logout() {
+    const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+    });
+
+    if (!response.ok) {
+        throw new Error('Logout failed. Please try again.');
+    }
+}
+export async function getCurrentSession(signal) {
+    const response = await fetch('/api/auth/me',{
+        cache: 'no-store',
+        signal,
+    });
+    if (response.status === 401) {
+        return null; // No active session
+    }
+    if (!response.ok) {
+        throw new Error('Could not check the login session.');
+    }
+    const data = await response.json();
+if (!['admin', 'employee', 'user'].includes(data.role)) {
+    throw new Error('The server returned an invalid session response.');
+}
+return data;
+}

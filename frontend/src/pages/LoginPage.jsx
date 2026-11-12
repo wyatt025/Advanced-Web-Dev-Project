@@ -1,10 +1,14 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getCurrentSession, login } from '../api/authApi'
 import './LoginPage.css'
 
-function LoginPage() {
+function LoginPage({ onSessionChange }) {
   const [mode, setMode] = useState('login')
   const [showPassword, setShowPassword] = useState(false)
   const [status, setStatus] = useState('')
+  const navigate = useNavigate()
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const isRegistering = mode === 'register'
 
   function changeMode(nextMode) {
@@ -13,21 +17,37 @@ function LoginPage() {
     setStatus('')
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
     const formData = new FormData(event.currentTarget)
-    if (
-      isRegistering &&
+    if (isRegistering &&
       formData.get('password') !== formData.get('confirm-password')
     ) {
       setStatus('Passwords do not match. Please check them and try again.')
       return
     }
 
-    setStatus(
-      `${isRegistering ? 'Registration' : 'Login'} isn't connected to an account service yet. Your details haven't been sent.`,
-    )
+    if (isRegistering) {
+      setStatus("Registration isn't connected to an account service yet. Your details haven't been sent.")
+      return
+    }
+
+    setStatus('')
+    setIsSubmitting(true)
+    try {
+      await login(formData.get('email'), formData.get('password'))
+      const session = await getCurrentSession();
+      if (!session) {
+        throw new Error('Login succeeded, but the session could not be established.')
+      }
+      onSessionChange(session);
+      navigate(session.role === 'admin' ? '/admin' : '/')
+    } catch (error) {
+      setStatus(error.message || 'Login failed. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -40,6 +60,7 @@ function LoginPage() {
               className={!isRegistering ? 'is-active' : ''}
               type="button"
               role="tab"
+              disabled={isSubmitting}
               aria-selected={!isRegistering}
               aria-controls="account-form"
               onClick={() => changeMode('login')}
@@ -51,6 +72,7 @@ function LoginPage() {
               className={isRegistering ? 'is-active' : ''}
               type="button"
               role="tab"
+              disabled={isSubmitting}
               aria-selected={isRegistering}
               aria-controls="account-form"
               onClick={() => changeMode('register')}
@@ -97,7 +119,7 @@ function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   autoComplete={isRegistering ? 'new-password' : 'current-password'}
-                  minLength={8}
+                  minLength={isRegistering ? 8 : undefined}
                   required
                 />
                 <button
@@ -126,13 +148,13 @@ function LoginPage() {
 
             {!isRegistering && (
               <label className="account-form__remember">
-                <input type="checkbox" name="remember" />
-                <span>Remember me</span>
+                <input type="checkbox" name="remember" disabled />
+                <span>Remember me (not available yet)</span>
               </label>
             )}
 
-            <button className="account-form__submit" type="submit">
-              {isRegistering ? 'Continue to authentication' : 'Log in'}
+            <button className="account-form__submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Logging in...' : isRegistering ? 'Continue to authentication' : 'Log in'}
               <span aria-hidden="true">→</span>
             </button>
             <p className="account-form__status" role="status" aria-live="polite">

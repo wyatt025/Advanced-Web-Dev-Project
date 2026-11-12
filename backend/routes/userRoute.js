@@ -3,7 +3,6 @@ const userRouter = express.Router();
 const userModel = require('../models/user_model');
 const { authenticate, requireRole } = require('../middleware/token&roleAuth');
 const bcrypt = require('bcrypt'); 
-const jwt = require('jsonwebtoken');
 
 /*
 There needs to be routes for guest such as:
@@ -50,30 +49,6 @@ userRouter.post('/register', async (req, res) => {
 
 
 //---- Routes for registered users --------
-userRouter.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
-        }
-        const user = await userModel.getUserForLogin(email);
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-        const validPassword = await bcrypt.compare(password, user.password);
-        if (!validPassword) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-        if (!process.env.JWT_SECRET) {
-            throw new Error('JWT_SECRET is not configured');
-        }
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '2h' });
-        res.json({ token });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 userRouter.use(authenticate);
 userRouter.use(requireRole('user'));
 
