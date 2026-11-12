@@ -1,0 +1,133 @@
+.user-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding: 38px 32px 48px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.user-page__heading,
+.user-panel {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.user-page__heading > p {
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.user-page__heading h1 {
+  margin: 4px 0 0;
+  color: var(--text-h);
+  font-size: 32px;
+}
+
+.user-panel {
+  padding: 22px;
+  border: 1px solid #383027;
+  border-radius: 10px;
+  background: #1b1815;
+  box-sizing: border-box;
+}
+
+.user-panel h2 {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 17px;
+}
+
+.user-page__email {
+  margin-top: 12px;
+  color: var(--gold);
+  font-size: 14px;
+}
+
+.user-page__note,
+.user-panel__heading p {
+  margin-top: 5px;
+  color: #a99f8d;
+  font-size: 11px;
+}
+
+.user-panel__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.user-page__placeholder {
+  color: #a99f8d;
+  font-size: 10px;
+}
+
+.user-ticket-list {
+  display: grid;
+}
+
+.user-ticket {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid #383027;
+}
+
+.user-ticket__movie h3 {
+  margin: 0;
+  color: #eee6d9;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.user-ticket__movie p {
+  margin-top: 5px;
+  color: #a99f8d;
+  font-size: 11px;
+}
+
+.user-ticket__details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.user-ticket__details span {
+  padding: 5px 8px;
+  border: 1px solid #494034;
+  border-radius: 5px;
+  color: #d6c9a5;
+  font-size: 10px;
+}
+
+@media (max-width: 600px) {
+  .user-page {
+    gap: 16px;
+    padding: 28px 16px 36px;
+  }
+
+  .user-panel {
+    padding: 18px 14px;
+  }
+
+  .user-ticket {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .user-ticket__details {
+    justify-content: flex-start;
+  }
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { logout } from '../api/authApi'
+import rioLogo from '../images/Cinematic_RIO_Marquee_Logo.png'
 import './Sidebar.css'
 
 function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
@@ -25,7 +26,7 @@ function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
   return (
     <aside className="site-sidebar">
       <Link className="site-sidebar__brand" to="/" aria-label="Movie Theater Rio home">
-        <span>Rio</span>
+        <img src={rioLogo} alt="Rio - Oulu Tampere" />
       </Link>
 
       <div className="site-sidebar__search" role="search">
@@ -52,6 +53,14 @@ function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
       </div>
 
       <nav className="site-sidebar__nav" aria-label="Main navigation">
+        <NavLink
+          className={({ isActive }) =>
+            `site-sidebar__link${isActive ? ' is-active' : ''}`
+          }
+          to="/user"
+        >
+          <span>User</span>
+        </NavLink>
         <NavLink
           className={({ isActive }) =>
             `site-sidebar__link${isActive ? ' is-active' : ''}`

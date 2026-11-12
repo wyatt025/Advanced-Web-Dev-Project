@@ -22,13 +22,17 @@
 .site-sidebar__brand {
   display: flex;
   align-items: center;
-  gap: 11px;
-  align-self: flex-start;
-  margin: 0 0 28px 4px;
-  color: var(--gold) !important;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  align-self: stretch;
+  justify-content: center;
+  margin: 0 0 28px;
+}
+
+.site-sidebar__brand img {
+  display: block;
+  width: 80%;
+  max-width: 168px;
+  height: auto;
+  border-radius: 6px;
 }
 
 .site-sidebar__search {
@@ -137,7 +141,12 @@
   }
 
   .site-sidebar__brand {
+    align-self: flex-start;
     margin: 0 0 12px;
+  }
+
+  .site-sidebar__brand img {
+    width: 120px;
   }
 
   .site-sidebar__search {

@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import AdminDashboard from './pages/AdminDashboard.jsx'
 import MoviePage from './pages/MoviePage.jsx'
 import TicketPage from './pages/TicketPage.jsx'
+import UserPage from './pages/UserPage.jsx'
 
 function App() {
   const [session, setSession] = useState(null);
@@ -69,6 +70,7 @@ function App() {
             <Route path="/movies" element={<HomePage />} />
             <Route path="/login" element={<LoginPage onSessionChange={updateSession} />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/user" element={<UserPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>
         </main>

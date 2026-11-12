@@ -4,6 +4,7 @@ import movies from './movies.js'
 
 function HomePage() {
   const [location, setLocation] = useState('Oulu')
+  const locationMovies = movies.filter((movie) => movie.location === location)
 
   return (
     <main className="movie-catalog">
@@ -32,7 +33,7 @@ function HomePage() {
           aria-label={`Movies row ${row + 1}`}
           key={row}
         >
-          {movies.map((movie) => (
+          {locationMovies.map((movie) => (
             <MovieBox key={movie.id} {...movie} />
           ))}
         </section>

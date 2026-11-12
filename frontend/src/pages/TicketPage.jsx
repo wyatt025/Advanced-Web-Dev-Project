@@ -66,7 +66,6 @@ function TicketPage() {
         Back to {movie.title}
       </Link>
       <header className="ticket-page__heading">
-        <p className="ticket-page__eyebrow">Book your seats</p>
         <h1>{movie.title}</h1>
         <p>{movie.genre} · Auditorium {movie.auditorium}</p>
       </header>
