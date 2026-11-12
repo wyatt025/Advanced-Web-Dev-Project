@@ -2,8 +2,12 @@ const express = require('express');
 const adminRouter = express.Router();
 const adminModel = require('../models/admin_model');
 const { authenticate, requireRole } = require('../middleware/token&roleAuth');
+const { movieSearcher } = require('../services/omdbService');
+const { omdbContentFilter } = require('../helpers/movieMapper');
 const bcrypt = require('bcrypt'); 
 const jwt = require('jsonwebtoken'); 
+
+
 
 //-------- NOTE: ROUTES MAY NEED UPDATING ONCE DATABASE SCHEMA IS FINALIZED
 
@@ -90,6 +94,85 @@ adminRouter.delete('/:id', async (req, res) => {
         }
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+
+//----- OMDb Search Routes -----
+adminRouter.get('/movies/search', async (req, res) => {
+    try {
+        const { title } = req.query;
+
+        // Query parameters arrive as strings; the service expects a number.
+        const page = req.query.page === undefined ? 1 : Number(req.query.page);
+        const results = await movieSearcher.searchMovie(title, page);
+
+        return res.json(results);
+    } catch (err) {
+        if (err.code === 'INVALID_INPUT') {
+            return res.status(400).json({ error: err.message });
+        }
+        if (err.code === 'NOT_FOUND') {
+            return res.status(404).json({ error: 'No movies found' });
+        }
+        if (err.code === 'TIMEOUT') {
+            return res.status(504).json({ error: 'Movie search timed out' });
+        }
+
+        // Log only a safe code, not a URL that could contain the API key.
+        console.error('Movie search failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(502).json({ error: 'Movie search is unavailable' });
+    }
+});
+
+adminRouter.post('/movies/import', async (req, res) => {
+    if (!req.body) {
+        return res.status(400).json({ error: 'Request body is required' });
+    }
+    const { imdbID, price } = req.body;
+    if (!imdbID) {
+        return res.status(400).json({ error: 'IMDb ID is required' });
+    }
+    // Up to six digits before the decimal point and one or two after it.
+    const priceFormat = /^\d{1,6}(\.\d{1,2})?$/;
+    if (typeof price !== 'string' || !priceFormat.test(price) || Number(price) <= 0) {
+        return res.status(400).json({
+            error: 'Price must be positive and have at most two decimal places',
+        });
+    }
+
+    let filteredData;
+    try {
+        const omdbData = await movieSearcher.getMovieById(imdbID);
+        filteredData = omdbContentFilter(omdbData);
+    } catch (err) {
+        if (err.code === 'INVALID_INPUT') {
+            return res.status(400).json({ error: 'Invalid IMDb ID' });
+        }
+        if (err.code === 'NOT_FOUND') {
+            return res.status(404).json({ error: 'Movie not found in OMDb' });
+        }
+        if (err.code === 'TIMEOUT') {
+            return res.status(504).json({ error: 'Movie lookup timed out' });
+        }
+        if (err.code === 'PROVIDER_ERROR' || err.code === 'NETWORK_ERROR') {
+            console.error('Movie lookup failed:', err.code);
+            return res.status(502).json({ error: 'Movie lookup is unavailable' });
+        }
+        console.error('Movie import lookup failed:', err.code === 'CONFIG_ERROR' ? err.code : 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not import movie' });
+    }
+
+    filteredData.price = price;
+    try {
+        const result = await adminModel.createMovie(filteredData);
+        return res.status(201).json(result);
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Movie has already been imported' });
+        }
+        console.error('Movie import database operation failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not save movie' });
     }
 });
 

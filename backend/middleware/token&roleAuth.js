@@ -7,6 +7,7 @@ async function authenticate(req, res, next) {
         return res.status(401).json({ error: 'Authorization header missing' });
     }
 
+    // Split the authorization header on one or more whitespace characters.
     const [scheme, token, ...extraParts] = authHeader.trim().split(/\s+/);
     if (scheme !== 'Bearer' || !token || extraParts.length > 0) {
         return res.status(401).json({ error: 'Expected a Bearer token' });
