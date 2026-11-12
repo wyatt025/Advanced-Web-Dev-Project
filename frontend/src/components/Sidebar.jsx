@@ -1,7 +1,27 @@
+import { useState } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { logout } from '../api/authApi'
 import './Sidebar.css'
-import { Link, NavLink } from 'react-router-dom'
 
-function Sidebar() {
+function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
+  const navigate = useNavigate()
+  const [logoutStatus, setLogoutStatus] = useState('')
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    setLogoutStatus('')
+    setIsLoggingOut(true)
+
+    try {
+      await logout()
+      onSessionChange(null)
+      navigate('/login')
+    } catch (error) {
+      setLogoutStatus(error.message || 'Could not log out. Please try again.')
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
   return (
     <aside className="site-sidebar">
       <Link className="site-sidebar__brand" to="/" aria-label="Movie Theater Rio home">
@@ -43,14 +63,37 @@ function Sidebar() {
       </nav>
 
       <div className="site-sidebar__account">
-        <NavLink
-          className={({ isActive }) =>
-            `site-sidebar__link${isActive ? ' is-active' : ''}`
-          }
-          to="/login"
-        >
-          <span>Login / Register</span>
-        </NavLink>
+        {sessionLoading ? (
+          <p>Loading session...</p>
+        ) : sessionError ? (
+          <>
+            <p role="alert">{sessionError}</p>
+            <button type="button" onClick={() => window.location.reload()}>
+              Retry
+            </button>
+          </>
+        ) : session ? (
+          <>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? 'Logging out...' : 'Log out'}
+            </button>
+            <p role="status" aria-live="polite">{logoutStatus}</p>
+          </>
+
+        ) : (
+          <NavLink
+            className={({ isActive }) =>
+              `site-sidebar__link${isActive ? ' is-active' : ''}`
+            }
+            to="/login"
+          >
+            <span>Login / Register</span>
+          </NavLink>
+        )}
       </div>
     </aside>
   )

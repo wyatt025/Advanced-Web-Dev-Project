@@ -62,14 +62,6 @@ async function getMovieById(id) {
 
 const adminModel = {
 //----- Admin Management -----------
-    getAdminForLogin: async (email) => {
-        const [rows] = await pools.auth.execute(
-            'SELECT id, password FROM users WHERE email = ? AND role = ?',
-            [email, 'admin']
-        );
-        return rows[0];
-    },
-
     getAllAdmins: () => getUsersByRole('admin'),
     getAdminById: (id) => getUserById(id, 'admin'),
     createAdmin: (admin) => createUser(admin, 'admin'),

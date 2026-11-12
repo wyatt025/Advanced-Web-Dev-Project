@@ -5,37 +5,13 @@ const { authenticate, requireRole } = require('../middleware/token&roleAuth');
 const { movieSearcher } = require('../services/omdbService');
 const { omdbContentFilter } = require('../helpers/movieMapper');
 const bcrypt = require('bcrypt'); 
-const jwt = require('jsonwebtoken'); 
+const { validateMovie, MovieValidationError } = require('../helpers/validateMovie');
 
 
 
 //-------- NOTE: ROUTES MAY NEED UPDATING ONCE DATABASE SCHEMA IS FINALIZED
 
 //----- Admin Management Routes -----------
-adminRouter.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        if (typeof email !== 'string' || typeof password !== 'string') {
-            return res.status(400).json({ error: 'Email and password are required' });
-        }
-        const admin = await adminModel.getAdminForLogin(email);
-        if (!admin) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-        const validPassword = await bcrypt.compare(password, admin.password);
-        if (!validPassword) {
-            return res.status(401).json({ error: 'Invalid email or password' });
-        }
-        if (!process.env.JWT_SECRET) {
-            throw new Error('JWT_SECRET is not configured');
-        }
-        const token = jwt.sign({ id: admin.id }, process.env.JWT_SECRET, { expiresIn: '2h' });
-        res.json({ token });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 adminRouter.use(authenticate);
 adminRouter.use(requireRole('admin'));
 
@@ -125,26 +101,12 @@ adminRouter.get('/movies/search', async (req, res) => {
     }
 });
 
-adminRouter.post('/movies/import', async (req, res) => {
-    if (!req.body) {
-        return res.status(400).json({ error: 'Request body is required' });
-    }
-    const { imdbID, price } = req.body;
-    if (!imdbID) {
-        return res.status(400).json({ error: 'IMDb ID is required' });
-    }
-    // Up to six digits before the decimal point and one or two after it.
-    const priceFormat = /^\d{1,6}(\.\d{1,2})?$/;
-    if (typeof price !== 'string' || !priceFormat.test(price) || Number(price) <= 0) {
-        return res.status(400).json({
-            error: 'Price must be positive and have at most two decimal places',
-        });
-    }
-
-    let filteredData;
+adminRouter.get('/movies/details/:imdbID', async (req, res) => {
     try {
-        const omdbData = await movieSearcher.getMovieById(imdbID);
-        filteredData = omdbContentFilter(omdbData);
+        const omdbData = await movieSearcher.getMovieById(req.params.imdbID);
+        const movie = omdbContentFilter(omdbData);
+
+        return res.json(movie);
     } catch (err) {
         if (err.code === 'INVALID_INPUT') {
             return res.status(400).json({ error: 'Invalid IMDb ID' });
@@ -159,23 +121,14 @@ adminRouter.post('/movies/import', async (req, res) => {
             console.error('Movie lookup failed:', err.code);
             return res.status(502).json({ error: 'Movie lookup is unavailable' });
         }
-        console.error('Movie import lookup failed:', err.code === 'CONFIG_ERROR' ? err.code : 'UNKNOWN_ERROR');
-        return res.status(500).json({ error: 'Could not import movie' });
-    }
 
-    filteredData.price = price;
-    try {
-        const result = await adminModel.createMovie(filteredData);
-        return res.status(201).json(result);
-    } catch (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ error: 'Movie has already been imported' });
-        }
-        console.error('Movie import database operation failed:', err.code || 'UNKNOWN_ERROR');
-        return res.status(500).json({ error: 'Could not save movie' });
+        console.error(
+            'Movie details lookup failed:',
+            err.code === 'CONFIG_ERROR' ? err.code : 'UNKNOWN_ERROR'
+        );
+        return res.status(500).json({ error: 'Could not load movie details' });
     }
 });
-
 
 //----- Movie Management Routes -----------
 adminRouter.get('/movies', async (req, res) => {
@@ -202,13 +155,20 @@ adminRouter.get('/movies/:id', async (req, res) => {
 
 adminRouter.post('/movies', async (req, res) => {
     try {
-        if (!req.body || typeof req.body.title !== 'string' || !req.body.title.trim()) {
-            return res.status(400).json({ error: 'Movie title is required' });
-        }
-        const result = await adminModel.createMovie(req.body);
-        res.status(201).json(result);
+        const movie = validateMovie(req.body);
+        const result = await adminModel.createMovie(movie);
+        return res.status(201).json(result);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        if (err instanceof MovieValidationError) {
+            return res.status(400).json({ error: err.message });
+        }
+
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Movie has already been added' });
+        }
+
+        console.error('Movie creation failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not save movie' });
     }
 });
 
