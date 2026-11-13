@@ -32,6 +32,9 @@ function HomePage() {
       <section className="movie-catalog__grid" aria-label="Movies">
         {isLoading && <p role="status">Loading movies...</p>}
         {loadError && <p role="alert">{loadError}</p>}
+        {!isLoading && !loadError && movies.length === 0 && (
+          <p role="status">No movies are currently available.</p>
+        )}
         {!isLoading && !loadError && movies.map((movie) => (
           <MovieBox
             key={`${movie.id}-${movie.cinemaId}-${movie.auditoriumId}`}
