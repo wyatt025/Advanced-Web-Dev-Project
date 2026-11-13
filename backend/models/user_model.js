@@ -20,11 +20,20 @@ const publicMoviesQuery = `
         c.id AS cinemaId,
         c.name AS cinema,
         c.address AS cinemaAddress
-    FROM screenings s
-    JOIN movies m ON m.id = s.movie_id
-    JOIN auditoriums a ON a.id = s.auditorium_id AND a.isOpen = TRUE
-    JOIN cinemas c ON c.id = a.cinema_id AND c.isOpen = TRUE
-    WHERE s.date >= CURRENT_TIMESTAMP
+    FROM movies m
+    LEFT JOIN screenings s
+        ON s.movie_id = m.id
+        AND s.date >= CURRENT_TIMESTAMP
+        AND EXISTS (
+            SELECT 1
+            FROM auditoriums available_a
+            JOIN cinemas available_c ON available_c.id = available_a.cinema_id
+            WHERE available_a.id = s.auditorium_id
+                AND available_a.isOpen = TRUE
+                AND available_c.isOpen = TRUE
+        )
+    LEFT JOIN auditoriums a ON a.id = s.auditorium_id
+    LEFT JOIN cinemas c ON c.id = a.cinema_id
 `;
 
 function groupPublicMovieRows(rows) {
@@ -56,10 +65,12 @@ function groupPublicMovieRows(rows) {
             moviesByLocation.set(key, movie);
         }
 
-        movie.screenings.push({
-            id: row.screeningId,
-            date: row.screeningDate,
-        });
+        if (row.screeningId !== null) {
+            movie.screenings.push({
+                id: row.screeningId,
+                date: row.screeningDate,
+            });
+        }
     }
 
     return [...moviesByLocation.values()];
@@ -75,7 +86,7 @@ const userModel = {
     },
     getPublicMovie: async (id) => {
         const [rows] = await pools.public.execute(
-            `${publicMoviesQuery} AND m.id = ? ORDER BY c.name, a.id, s.date`,
+            `${publicMoviesQuery} WHERE m.id = ? ORDER BY c.name, a.id, s.date`,
             [id]
         );
         return groupPublicMovieRows(rows);
