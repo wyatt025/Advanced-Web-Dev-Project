@@ -36,7 +36,7 @@ function LoginPage({ onSessionChange }) {
     setStatus('')
     setIsSubmitting(true)
     try {
-      await login(formData.get('email'), formData.get('password'))
+      await login(formData.get('username'), formData.get('password'))
       const session = await getCurrentSession();
       if (!session) {
         throw new Error('Login succeeded, but the session could not be established.')
@@ -115,11 +115,11 @@ function LoginPage({ onSessionChange }) {
               </label>
             ) : (
               <label>
-                Email address
+                Username
                 <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
+                  type="text"
+                  name="username"
+                  autoComplete="username"
                   required
                 />
               </label>
