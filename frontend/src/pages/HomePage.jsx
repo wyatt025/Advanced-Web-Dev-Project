@@ -1,15 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { getMovieLocation, getMovies } from '../api/moviesApi.js'
 import MovieBox from '../components/MovieBox.jsx'
 
 function HomePage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [location, setLocation] = useState(() =>
-    ['Oulu', 'Tampere'].includes(searchParams.get('location'))
-      ? searchParams.get('location')
-      : 'Oulu',
-  )
   const [movies, setMovies] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -31,38 +24,15 @@ function HomePage() {
     return () => controller.abort()
   }, [])
 
-  const locationMovies = movies.filter(
-    (movie) => getMovieLocation(movie) === location,
-  )
-
   return (
     <main className="movie-catalog">
       <header className="movie-catalog__heading">
         <h1>Now Showing</h1>
-        <div className="movie-location" aria-label="Choose cinema location">
-          <span className="movie-location__label">Cinema</span>
-          <div className="movie-location__options">
-            {['Oulu', 'Tampere'].map((option) => (
-              <button
-                key={option}
-                className={`movie-location__button${location === option ? ' is-active' : ''}`}
-                type="button"
-                aria-pressed={location === option}
-                onClick={() => {
-                  setLocation(option)
-                  setSearchParams({ location: option })
-                }}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
       </header>
       <section className="movie-catalog__grid" aria-label="Movies">
         {isLoading && <p role="status">Loading movies...</p>}
         {loadError && <p role="alert">{loadError}</p>}
-        {!isLoading && !loadError && locationMovies.map((movie) => (
+        {!isLoading && !loadError && movies.map((movie) => (
           <MovieBox
             key={`${movie.id}-${movie.cinemaId}-${movie.auditoriumId}`}
             {...movie}
