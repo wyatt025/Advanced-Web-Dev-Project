@@ -4,16 +4,16 @@ const { authCookieOptions } = require('./authCookie');
 const { getAccountForLogin } = require('../models/auth_model');
 
 async function login(req, res) {
-    const { username, password } = req.body || {};
-    if (typeof username !== 'string' || !username.trim() ||
+    const { email, password } = req.body || {};
+    if (typeof email !== 'string' || !email.trim() ||
         typeof password !== 'string' || !password) {
-        return res.status(400).json({ error: 'Username and password are required' });
+        return res.status(400).json({ error: 'Email and password are required' });
     }
 
     try {
-        const user = await getAccountForLogin(username);
+        const user = await getAccountForLogin(email);
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            return res.status(401).json({ error: 'Invalid username or password' });
+            return res.status(401).json({ error: 'Invalid email or password' });
         }
         if (!process.env.JWT_SECRET) {
             console.error('JWT_SECRET is not configured');

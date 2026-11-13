@@ -36,6 +36,14 @@
   border-bottom: 2px solid var(--gold);
 }
 
+.movie-box__poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  object-fit: cover;
+}
+
 
 .movie-box__details {
   padding: 18px;

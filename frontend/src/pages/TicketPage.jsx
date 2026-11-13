@@ -1,11 +1,22 @@
-import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import movies from './movies.js'
+import { useEffect, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { getMovie, getMovieLocation } from '../api/moviesApi.js'
 import './TicketPage.css'
 
-const screeningTimes = ['12:30', '15:45', '18:30', '20:45']
 const seatsPerRow = 10
 const seatNumbers = Array.from({ length: seatsPerRow }, (_, index) => index + 1)
+
+function formatScreeningDate(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date)
+}
 
 function leavesSeatGap(seats) {
   const positions = seats
@@ -28,13 +39,49 @@ function leavesSeatGap(seats) {
 
 function TicketPage() {
   const { movieId } = useParams()
-  const movie = movies.find((item) => item.id === movieId)
-  const seatCapacity = movie?.auditorium === 2 ? 200 : 100
+  const [searchParams] = useSearchParams()
+  const location = searchParams.get('location') || ''
+  const auditoriumId = searchParams.get('auditorium') || ''
+  const requestKey = `${movieId}:${location}:${auditoriumId}`
+  const [movieResult, setMovieResult] = useState(null)
+  const [booking, setBooking] = useState(null)
+  const currentBooking = booking?.key === requestKey
+    ? booking
+    : { screeningId: '', seats: [], gapMessage: '' }
+  const selectedScreeningId = currentBooking.screeningId
+  const selectedSeats = currentBooking.seats
+  const seatGapMessage = currentBooking.gapMessage
+  const movie = movieResult?.key === requestKey ? movieResult.movie : null
+  const seatCapacity = Number(movie?.seatCapacity || 0)
   const rowCount = seatCapacity / seatsPerRow
   const rows = Array.from({ length: rowCount }, (_, index) => rowCount - index)
-  const [selectedTime, setSelectedTime] = useState('')
-  const [selectedSeats, setSelectedSeats] = useState([])
-  const [seatGapMessage, setSeatGapMessage] = useState('')
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    getMovie(movieId, { location, auditoriumId }, controller.signal)
+      .then((loadedMovie) => setMovieResult({ key: requestKey, movie: loadedMovie }))
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setMovieResult({
+            key: requestKey,
+            error: error.message || 'Could not load movie.',
+          })
+        }
+      })
+
+    return () => controller.abort()
+  }, [movieId, location, auditoriumId, requestKey])
+
+  const currentResult = movieResult?.key === requestKey ? movieResult : null
+
+  if (!currentResult) {
+    return <main className="ticket-page" role="status">Loading movie...</main>
+  }
+
+  if (currentResult.error) {
+    return <main className="ticket-page" role="alert">{currentResult.error}</main>
+  }
 
   if (!movie) {
     return (
@@ -47,44 +94,60 @@ function TicketPage() {
     )
   }
 
+  const selectedScreening = movie.screenings.find(
+    (screening) => String(screening.id) === selectedScreeningId,
+  )
+
   function toggleSeat(seat) {
     const nextSeats = selectedSeats.includes(seat)
       ? selectedSeats.filter((selectedSeat) => selectedSeat !== seat)
       : [...selectedSeats, seat].sort((first, second) => first - second)
 
-    setSelectedSeats(nextSeats)
-    setSeatGapMessage(
-      leavesSeatGap(nextSeats)
+    setBooking({
+      key: requestKey,
+      screeningId: selectedScreeningId,
+      seats: nextSeats,
+      gapMessage: leavesSeatGap(nextSeats)
         ? 'Please do not leave a gap between reserved seats.'
         : '',
-    )
+    })
   }
 
   return (
     <main className="ticket-page">
-      <Link className="ticket-page__back" to={`/movies/${movie.id}`}>
+      <Link
+        className="ticket-page__back"
+        to={`/movies/${movie.id}?location=${encodeURIComponent(location || getMovieLocation(movie))}&auditorium=${encodeURIComponent(movie.auditoriumId)}`}
+      >
         Back to {movie.title}
       </Link>
       <header className="ticket-page__heading">
         <h1>{movie.title}</h1>
-        <p>{movie.genre} · Auditorium {movie.auditorium}</p>
+        <p>{movie.genre} · {movie.cinema} · {movie.auditorium}</p>
       </header>
 
       <section className="ticket-panel" aria-labelledby="screening-title">
         <div className="ticket-panel__heading">
           <h2 id="screening-title">Choose a screening</h2>
-          <span>Today</span>
+          <span>{movie.screenings.length} available</span>
         </div>
         <div className="ticket-times" role="group" aria-label="Screening time">
-          {screeningTimes.map((time) => (
+          {movie.screenings.map((screening) => (
             <button
-              key={time}
-              className={`ticket-times__button${selectedTime === time ? ' is-selected' : ''}`}
+              key={screening.id}
+              className={`ticket-times__button${selectedScreeningId === String(screening.id) ? ' is-selected' : ''}`}
               type="button"
-              aria-pressed={selectedTime === time}
-              onClick={() => setSelectedTime(time)}
+              aria-pressed={selectedScreeningId === String(screening.id)}
+              onClick={() => {
+                setBooking({
+                  key: requestKey,
+                  screeningId: String(screening.id),
+                  seats: [],
+                  gapMessage: '',
+                })
+              }}
             >
-              {time}
+              {formatScreeningDate(screening.date)}
             </button>
           ))}
         </div>
@@ -93,7 +156,7 @@ function TicketPage() {
       <section className="ticket-panel ticket-seating" aria-labelledby="seats-title">
         <div className="ticket-panel__heading">
           <h2 id="seats-title">Choose your seats</h2>
-          <span>Auditorium {movie.auditorium} · {seatCapacity} seats</span>
+          <span>{movie.auditorium} · {seatCapacity} seats</span>
         </div>
         <div className="ticket-doors" aria-label="Auditorium doors">
           <span>DOOR</span>
@@ -169,7 +232,9 @@ function TicketPage() {
               : 'No seats selected'}
           </strong>
           <span>
-            {selectedTime ? `Today at ${selectedTime}` : 'Choose a screening time'}
+            {selectedScreening
+              ? formatScreeningDate(selectedScreening.date)
+              : 'Choose a screening time'}
             {selectedSeats.length ? ` · ${selectedSeats.join(', ')}` : ''}
           </span>
           {seatGapMessage && (
@@ -181,7 +246,7 @@ function TicketPage() {
         <button
           className="ticket-summary__continue"
           type="button"
-          disabled={!selectedTime || selectedSeats.length === 0}
+          disabled={!selectedScreening || selectedSeats.length === 0}
         >
           Continue
         </button>

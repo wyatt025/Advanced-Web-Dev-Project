@@ -1,10 +1,39 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { getMovieLocation, getMovies } from '../api/moviesApi.js'
 import MovieBox from '../components/MovieBox.jsx'
-import movies from './movies.js'
 
 function HomePage() {
-  const [location, setLocation] = useState('Oulu')
-  const locationMovies = movies.filter((movie) => movie.location === location)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [location, setLocation] = useState(() =>
+    ['Oulu', 'Tampere'].includes(searchParams.get('location'))
+      ? searchParams.get('location')
+      : 'Oulu',
+  )
+  const [movies, setMovies] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    getMovies(controller.signal)
+      .then(setMovies)
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setLoadError(error.message || 'Could not load movies.')
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [])
+
+  const locationMovies = movies.filter(
+    (movie) => getMovieLocation(movie) === location,
+  )
 
   return (
     <main className="movie-catalog">
@@ -19,7 +48,10 @@ function HomePage() {
                 className={`movie-location__button${location === option ? ' is-active' : ''}`}
                 type="button"
                 aria-pressed={location === option}
-                onClick={() => setLocation(option)}
+                onClick={() => {
+                  setLocation(option)
+                  setSearchParams({ location: option })
+                }}
               >
                 {option}
               </button>
@@ -27,17 +59,17 @@ function HomePage() {
           </div>
         </div>
       </header>
-      {[0, 1].map((row) => (
-        <section
-          className="movie-catalog__grid"
-          aria-label={`Movies row ${row + 1}`}
-          key={row}
-        >
-          {locationMovies.map((movie) => (
-            <MovieBox key={movie.id} {...movie} />
-          ))}
-        </section>
-      ))}
+      <section className="movie-catalog__grid" aria-label="Movies">
+        {isLoading && <p role="status">Loading movies...</p>}
+        {loadError && <p role="alert">{loadError}</p>}
+        {!isLoading && !loadError && locationMovies.map((movie) => (
+          <MovieBox
+            key={`${movie.id}-${movie.cinemaId}-${movie.auditoriumId}`}
+            {...movie}
+            location={getMovieLocation(movie)}
+          />
+        ))}
+      </section>
     </main>
   )
 }
