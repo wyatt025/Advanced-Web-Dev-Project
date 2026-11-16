@@ -61,6 +61,16 @@ function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
         >
           <span>User</span>
         </NavLink>
+        {!sessionLoading && !sessionError && session?.role === 'admin' && (
+          <NavLink
+            className={({ isActive }) =>
+              `site-sidebar__link${isActive ? ' is-active' : ''}`
+            }
+            to="/admin"
+          >
+            <span>Admin Console</span>
+          </NavLink>
+        )}
         <NavLink
           className={({ isActive }) =>
             `site-sidebar__link${isActive ? ' is-active' : ''}`
