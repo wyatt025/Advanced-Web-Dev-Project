@@ -3,11 +3,11 @@ import { getCurrentSession } from './api/authApi.js'
 import './App.css'
 import Sidebar from './components/Sidebar.jsx'
 import BottomBar from './components/BottomBar.jsx'
+import AdminRoute from './components/AdminRoute.jsx'
 import { Route, Routes } from 'react-router-dom'
 import AboutPage from './pages/AboutPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
-import AdminDashboard from './pages/AdminDashboard.jsx'
 import MoviePage from './pages/MoviePage.jsx'
 import TicketPage from './pages/TicketPage.jsx'
 import UserPage from './pages/UserPage.jsx'
@@ -69,7 +69,13 @@ function App() {
             <Route path="/about" element={<AboutPage />} />
             <Route path="/movies" element={<HomePage />} />
             <Route path="/login" element={<LoginPage onSessionChange={updateSession} />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={
+              <AdminRoute
+                session={session}
+                sessionLoading={sessionLoading}
+                sessionError={sessionError}
+              />
+            } />
             <Route path="/user" element={<UserPage />} />
             <Route path="*" element={<HomePage />} />
           </Routes>
