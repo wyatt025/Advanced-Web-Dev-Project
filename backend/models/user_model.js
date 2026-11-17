@@ -11,19 +11,21 @@ const publicMoviesQuery = `
         m.actors,
         m.director,
         m.runtime_minutes AS runtimeMinutes,
+        m.coming_soon AS comingSoon,
         m.price,
         s.id AS screeningId,
-        s.date AS screeningDate,
+        DATE_FORMAT(s.date, '%Y-%m-%dT%H:%i:%s.000Z') AS screeningDate,
         a.id AS auditoriumId,
         a.name AS auditorium,
         a.maxSeats AS seatCapacity,
+        a.accessibleSeats AS accessibleSeatCount,
         c.id AS cinemaId,
         c.name AS cinema,
         c.address AS cinemaAddress
     FROM movies m
     LEFT JOIN screenings s
         ON s.movie_id = m.id
-        AND s.date >= CURRENT_TIMESTAMP
+        AND s.date >= UTC_TIMESTAMP()
         AND EXISTS (
             SELECT 1
             FROM auditoriums available_a
@@ -53,10 +55,12 @@ function groupPublicMovieRows(rows) {
                 actors: row.actors,
                 director: row.director,
                 runtimeMinutes: row.runtimeMinutes,
+                comingSoon: Boolean(row.comingSoon),
                 price: row.price,
                 auditoriumId: row.auditoriumId,
                 auditorium: row.auditorium,
                 seatCapacity: row.seatCapacity,
+                accessibleSeatCount: row.accessibleSeatCount,
                 cinemaId: row.cinemaId,
                 cinema: row.cinema,
                 cinemaAddress: row.cinemaAddress,
