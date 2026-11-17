@@ -4,13 +4,14 @@ import './App.css'
 import Sidebar from './components/Sidebar.jsx'
 import BottomBar from './components/BottomBar.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
+import UserRoute from './components/UserRoute.jsx'
 import { Route, Routes } from 'react-router-dom'
 import AboutPage from './pages/AboutPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import MoviePage from './pages/MoviePage.jsx'
 import TicketPage from './pages/TicketPage.jsx'
-import UserPage from './pages/UserPage.jsx'
+
 
 function App() {
   const [session, setSession] = useState(null);
@@ -76,7 +77,13 @@ function App() {
                 sessionError={sessionError}
               />
             } />
-            <Route path="/user" element={<UserPage />} />
+            <Route path="/user" element={
+              <UserRoute
+                session={session}
+                sessionLoading={sessionLoading}
+                sessionError={sessionError}
+              />
+            } />
             <Route path="*" element={<HomePage />} />
           </Routes>
         </main>
