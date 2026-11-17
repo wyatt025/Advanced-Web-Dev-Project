@@ -27,7 +27,7 @@ function HomePage() {
   return (
     <main className="movie-catalog">
       <header className="movie-catalog__heading">
-        <h1>Now Showing</h1>
+        <h1>Movies</h1>
       </header>
       <section className="movie-catalog__grid" aria-label="Movies">
         {isLoading && <p role="status">Loading movies...</p>}

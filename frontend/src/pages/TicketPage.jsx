@@ -15,6 +15,7 @@ function formatScreeningDate(value) {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    timeZone: 'Europe/Helsinki',
   }).format(date)
 }
 
@@ -53,7 +54,8 @@ function TicketPage() {
   const seatGapMessage = currentBooking.gapMessage
   const movie = movieResult?.key === requestKey ? movieResult.movie : null
   const seatCapacity = Number(movie?.seatCapacity || 0)
-  const rowCount = seatCapacity / seatsPerRow
+  const accessibleSeatCount = Number(movie?.accessibleSeatCount || 0)
+  const rowCount = (seatCapacity - accessibleSeatCount) / seatsPerRow
   const rows = Array.from({ length: rowCount }, (_, index) => rowCount - index)
 
   useEffect(() => {
@@ -93,7 +95,17 @@ function TicketPage() {
       </main>
     )
   }
-
+  if (movie.comingSoon) {
+    return (
+    <main className="ticket-page">
+    <h1>Coming soon</h1>
+    <p>Tickets are not available for this movie yet.</p>
+    <Link className="ticket-page__back" to={`/movies/${movie.id}`}>
+    Back to movie details
+    </Link>
+    </main>
+    )
+  }
   const selectedScreening = movie.screenings.find(
     (screening) => String(screening.id) === selectedScreeningId,
   )
@@ -201,9 +213,9 @@ function TicketPage() {
           <div
             className="ticket-wheelchair-slots"
             role="img"
-            aria-label="10 wheelchair spaces"
+            aria-label={`${accessibleSeatCount} wheelchair spaces`}
           >
-            {Array.from({ length: 10 }, (_, index) => (
+            {Array.from({length: accessibleSeatCount}, (_, index) => (
               <span className="ticket-wheelchair-slot" key={index}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="10" cy="4" r="2" />

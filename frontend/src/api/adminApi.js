@@ -33,14 +33,22 @@ export async function addMovieManually(movieData) {
     }
     return response.json();
 }
+export async function getOpenAuditoriums(signal) {
+    const response = await fetch('/api/admin/auditoriums', { cache: 'no-store', signal});
+    if (response.status === 401) throw new Error('Your session has expired. Please log in again.');
+    if (response.status === 403) throw new Error('Admin access is required, or the request origin is not allowed.');
+    if (!response.ok) throw new Error('Could not load auditoriums.');
 
+    const auditoriums = await response.json();
+    if (!Array.isArray(auditoriums)) throw new Error('The server returned an invalid auditorium list.');
+    return auditoriums;
+}
 async function movieRequestError(response, operation) {
     if (response.status === 401) throw new Error('Your session has expired. Please log in again.');
     if (response.status === 403) throw new Error('Admin access is required, or the request origin is not allowed.');
     if (response.status === 404 && operation === 'search') throw new Error('No movies found.');
     if (response.status === 404 && operation === 'lookup') throw new Error('Movie not found in OMDb.');
-    if (response.status === 409) throw new Error('A movie with this IMDb ID has already been added.');
-    if (response.status === 400) {
+    if (response.status === 400 || response.status === 409) {
         const contentType = response.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
             const body = await response.json();
