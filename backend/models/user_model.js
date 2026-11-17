@@ -21,7 +21,8 @@ const publicMoviesQuery = `
         a.accessibleSeats AS accessibleSeatCount,
         c.id AS cinemaId,
         c.name AS cinema,
-        c.address AS cinemaAddress
+        c.address AS cinemaAddress,
+        taken.seatNumber AS takenSeat
     FROM movies m
     LEFT JOIN screenings s
         ON s.movie_id = m.id
@@ -36,14 +37,15 @@ const publicMoviesQuery = `
         )
     LEFT JOIN auditoriums a ON a.id = s.auditorium_id
     LEFT JOIN cinemas c ON c.id = a.cinema_id
+    LEFT JOIN v_taken_seats taken ON taken.screening_id = s.id
 `;
 
 function groupPublicMovieRows(rows) {
-    const moviesByLocation = new Map();
+    const moviesById = new Map();
+    const screeningsById = new Map();
 
     for (const row of rows) {
-        const key = `${row.id}:${row.cinemaId}:${row.auditoriumId}`;
-        let movie = moviesByLocation.get(key);
+        let movie = moviesById.get(row.id);
         if (!movie) {
             movie = {
                 id: row.id,
@@ -57,27 +59,36 @@ function groupPublicMovieRows(rows) {
                 runtimeMinutes: row.runtimeMinutes,
                 comingSoon: Boolean(row.comingSoon),
                 price: row.price,
-                auditoriumId: row.auditoriumId,
-                auditorium: row.auditorium,
-                seatCapacity: row.seatCapacity,
-                accessibleSeatCount: row.accessibleSeatCount,
-                cinemaId: row.cinemaId,
-                cinema: row.cinema,
-                cinemaAddress: row.cinemaAddress,
                 screenings: [],
             };
-            moviesByLocation.set(key, movie);
+            moviesById.set(row.id, movie);
         }
 
         if (row.screeningId !== null) {
-            movie.screenings.push({
-                id: row.screeningId,
-                date: row.screeningDate,
-            });
+            let screening = screeningsById.get(row.screeningId);
+            if (!screening) {
+                screening = {
+                    id: row.screeningId,
+                    date: row.screeningDate,
+                    auditoriumId: row.auditoriumId,
+                    auditorium: row.auditorium,
+                    seatCapacity: row.seatCapacity,
+                    accessibleSeatCount: row.accessibleSeatCount,
+                    cinemaId: row.cinemaId,
+                    cinema: row.cinema,
+                    cinemaAddress: row.cinemaAddress,
+                    takenSeats: [],
+                };
+                screeningsById.set(row.screeningId, screening);
+                movie.screenings.push(screening);
+            }
+            if (row.takenSeat !== null && !screening.takenSeats.includes(row.takenSeat)) {
+                screening.takenSeats.push(row.takenSeat);
+            }
         }
     }
 
-    return [...moviesByLocation.values()];
+    return [...moviesById.values()];
 }
 
 
