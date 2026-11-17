@@ -1,9 +1,10 @@
 const pools = require('../helpers/db');
+const { MovieValidationError } = require('../helpers/validateMovie');
 
 const userFields = 'id, name, email, phone, role, created_at';
 const movieFields = [
     'price', 'imdb_id', 'title', 'release_year', 'rated', 'released_date',
-    'runtime_minutes', 'genre', 'director', 'writer', 'actors', 'plot',
+    'runtime_minutes', 'coming_soon', 'genre', 'director', 'writer', 'actors', 'plot',
     'languages', 'poster_url', 'rating_imdb', 'rating_rotten_tomatoes',
     'rating_metacritic',
 ];
@@ -60,6 +61,30 @@ async function getMovieById(id) {
     return rows[0];
 }
 
+async function checkScreeningAvailability(connection, screening, runtimeMinutes) {
+    const [conflicts] = await connection.execute(
+        `SELECT s.id, m.runtime_minutes
+            FROM screenings s
+            JOIN movies m ON m.id = s.movie_id
+            WHERE s.auditorium_id = ?
+            AND s.date < DATE_ADD(?, INTERVAL ? MINUTE)
+            AND (
+            m.runtime_minutes IS NULL OR m.runtime_minutes <= 0
+            OR DATE_ADD(s.date, INTERVAL (m.runtime_minutes + 60) MINUTE) > ?
+            )
+            LIMIT 1`,
+            [screening.auditoriumId, screening.date, runtimeMinutes + 60, screening.date]
+            );
+            if (conflicts.length > 0) {
+                const error = new Error(conflicts[0].runtime_minutes == null || conflicts[0].runtime_minutes <= 0
+                                        ? 'An existing screening has no valid movie runtime; its availability cannot be checked'
+                                        : 'The auditorium is already booked during this time'
+                                        );
+                error.code = 'SCREENING_CONFLICT';
+                throw error;
+            }
+}
+
 const adminModel = {
 //----- Admin Management -----------
     getAllAdmins: () => getUsersByRole('admin'),
@@ -68,12 +93,90 @@ const adminModel = {
     updateAdmin: (id, admin) => updateUser(id, admin, 'admin'),
     deleteAdmin: (id) => deleteUser(id, 'admin'),
 
+//----- Cinema/Auditorium Management -----------
+    getOpenAuditoriums: async () => {
+        const [rows] = await pools.admin.execute(
+                `SELECT a.id, a.name, a.maxSeats, a.accessibleSeats,
+                c.id AS cinemaId, c.name AS cinemaName
+                FROM auditoriums a
+                JOIN cinemas c ON c.id = a.cinema_id
+                WHERE a.isOpen = TRUE AND c.isOpen = TRUE
+                ORDER BY c.name, a.name, a.id`
+            );
+        return rows;
+    },
+
 //----- Movie Management -----------
     getAllMovies: async () => {
         const [rows] = await pools.admin.execute('SELECT * FROM movies');
         return rows;
     },
     getMovieById,
+    createMovieWithScreenings: async (movie, screenings) => {
+        const connection = await pools.admin.getConnection();
+        let transactionStarted = false;
+
+        try {
+            await connection.beginTransaction();
+            transactionStarted = true;
+
+            const auditoriumIds = [...new Set(screenings.map((s) => s.auditoriumId))]
+            .sort((a, b) => a - b);
+
+            for (const id of auditoriumIds) {
+            const [rows] = await connection.execute(
+                `SELECT a.id
+                FROM auditoriums a
+                JOIN cinemas c ON c.id = a.cinema_id
+                WHERE a.id = ? AND a.isOpen = TRUE AND c.isOpen = TRUE
+                FOR UPDATE`,
+                [id]
+            );
+            if (rows.length === 0) {
+                throw new MovieValidationError('The selected auditorium is unavailable');
+            }
+        }
+
+        const fields = movieFields.filter((field) => movie[field] !== undefined);
+        const [result] = await connection.execute(
+            `INSERT INTO movies (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`,
+            fields.map((field) => movie[field])
+        );
+
+        for (const screening of screenings) {
+            const [clock] = await connection.execute(
+                'SELECT ? > UTC_TIMESTAMP() AS isFuture', [screening.date]
+            );
+            if (!clock[0].isFuture) {
+                throw new MovieValidationError('Screening time must be in the future');
+            }
+
+            await checkScreeningAvailability(connection, screening, movie.runtime_minutes);
+            await connection.execute(
+                'INSERT INTO screenings (movie_id, auditorium_id, date) VALUES (?, ?, ?)',
+                [result.insertId, screening.auditoriumId, screening.date]
+            );
+        }
+
+        const [movies] = await connection.execute(
+            'SELECT * FROM movies WHERE id = ?', [result.insertId]
+        );
+        await connection.commit();
+        transactionStarted = false;
+        return movies[0];
+        } catch (err) {
+            if (transactionStarted) {
+                try {
+                    await connection.rollback();
+                } catch (rollbackError) {
+                    console.error('Movie transaction rollback failed:', rollbackError.code || 'UNKNOWN_ERROR');
+                }
+            }
+            throw err;
+        } finally {
+        connection.release();
+        }
+    },
     createMovie: async (movie) => {
         const fields = movieFields.filter(field => movie[field] !== undefined);
         const [result] = await pools.admin.execute(

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { getMovie, getMovieLocation } from '../api/moviesApi.js'
+import { Link, useParams } from 'react-router-dom'
+import { getMovie } from '../api/moviesApi.js'
+import { hasAvailableRegularSeat, regularSeats } from './screeningAvailability.js'
 import './TicketPage.css'
 
 const seatsPerRow = 10
-const seatNumbers = Array.from({ length: seatsPerRow }, (_, index) => index + 1)
 
 function formatScreeningDate(value) {
   const date = new Date(value)
@@ -15,6 +15,7 @@ function formatScreeningDate(value) {
     day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
+    timeZone: 'Europe/Helsinki',
   }).format(date)
 }
 
@@ -39,27 +40,21 @@ function leavesSeatGap(seats) {
 
 function TicketPage() {
   const { movieId } = useParams()
-  const [searchParams] = useSearchParams()
-  const location = searchParams.get('location') || ''
-  const auditoriumId = searchParams.get('auditorium') || ''
-  const requestKey = `${movieId}:${location}:${auditoriumId}`
+  const requestKey = movieId
   const [movieResult, setMovieResult] = useState(null)
   const [booking, setBooking] = useState(null)
   const currentBooking = booking?.key === requestKey
     ? booking
-    : { screeningId: '', seats: [], gapMessage: '' }
+    : { cinemaId: '', screeningId: '', seats: [], gapMessage: '' }
+  const selectedCinemaId = currentBooking.cinemaId
   const selectedScreeningId = currentBooking.screeningId
   const selectedSeats = currentBooking.seats
   const seatGapMessage = currentBooking.gapMessage
   const movie = movieResult?.key === requestKey ? movieResult.movie : null
-  const seatCapacity = Number(movie?.seatCapacity || 0)
-  const rowCount = seatCapacity / seatsPerRow
-  const rows = Array.from({ length: rowCount }, (_, index) => rowCount - index)
-
   useEffect(() => {
     const controller = new AbortController()
 
-    getMovie(movieId, { location, auditoriumId }, controller.signal)
+    getMovie(movieId, controller.signal)
       .then((loadedMovie) => setMovieResult({ key: requestKey, movie: loadedMovie }))
       .catch((error) => {
         if (!controller.signal.aborted) {
@@ -71,7 +66,7 @@ function TicketPage() {
       })
 
     return () => controller.abort()
-  }, [movieId, location, auditoriumId, requestKey])
+  }, [movieId, requestKey])
 
   const currentResult = movieResult?.key === requestKey ? movieResult : null
 
@@ -93,18 +88,41 @@ function TicketPage() {
       </main>
     )
   }
-
-  const selectedScreening = movie.screenings.find(
+  if (movie.comingSoon) {
+    return (
+    <main className="ticket-page">
+    <h1>Coming soon</h1>
+    <p>Tickets are not available for this movie yet.</p>
+    <Link className="ticket-page__back" to={`/movies/${movie.id}`}>
+    Back to movie details
+    </Link>
+    </main>
+    )
+  }
+  const availableScreenings = movie.screenings.filter(hasAvailableRegularSeat)
+  const cinemas = [...new Map(
+    availableScreenings.map((screening) => [screening.cinemaId, screening.cinema])
+  )]
+  const cinemaScreenings = availableScreenings.filter(
+    (screening) => String(screening.cinemaId) === selectedCinemaId
+  )
+  const selectedScreening = cinemaScreenings.find(
     (screening) => String(screening.id) === selectedScreeningId,
   )
+  const seats = selectedScreening ? regularSeats(selectedScreening) : []
+  const rowCount = Math.ceil(seats.length / seatsPerRow)
+  const rows = Array.from({ length: rowCount }, (_, index) => rowCount - index)
+  const accessibleSeatCount = selectedScreening?.accessibleSeatCount || 0
 
   function toggleSeat(seat) {
+    if (!selectedScreening || selectedScreening.takenSeats.includes(seat)) return
     const nextSeats = selectedSeats.includes(seat)
       ? selectedSeats.filter((selectedSeat) => selectedSeat !== seat)
       : [...selectedSeats, seat].sort((first, second) => first - second)
 
     setBooking({
       key: requestKey,
+      cinemaId: selectedCinemaId,
       screeningId: selectedScreeningId,
       seats: nextSeats,
       gapMessage: leavesSeatGap(nextSeats)
@@ -117,22 +135,52 @@ function TicketPage() {
     <main className="ticket-page">
       <Link
         className="ticket-page__back"
-        to={`/movies/${movie.id}?location=${encodeURIComponent(location || getMovieLocation(movie))}&auditorium=${encodeURIComponent(movie.auditoriumId)}`}
+        to={`/movies/${movie.id}`}
       >
         Back to {movie.title}
       </Link>
       <header className="ticket-page__heading">
         <h1>{movie.title}</h1>
-        <p>{movie.genre} · {movie.cinema} · {movie.auditorium}</p>
+        {movie.genre && <p>{movie.genre}</p>}
       </header>
 
+      <section className="ticket-panel" aria-labelledby="cinema-title">
+        <div className="ticket-panel__heading">
+          <h2 id="cinema-title">Choose a cinema</h2>
+        </div>
+        {cinemas.length === 0 ? (
+          <p>No screenings with available regular seats are currently available.</p>
+        ) : (
+          <div className="ticket-times" role="group" aria-label="Cinema">
+            {cinemas.map(([id, name]) => (
+              <button
+                key={id}
+                type="button"
+                className={`ticket-times__button${selectedCinemaId === String(id) ? ' is-selected' : ''}`}
+                aria-pressed={selectedCinemaId === String(id)}
+                onClick={() => setBooking({
+                  key: requestKey,
+                  cinemaId: String(id),
+                  screeningId: '',
+                  seats: [],
+                  gapMessage: '',
+                })}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {selectedCinemaId && (
       <section className="ticket-panel" aria-labelledby="screening-title">
         <div className="ticket-panel__heading">
           <h2 id="screening-title">Choose a screening</h2>
-          <span>{movie.screenings.length} available</span>
+          <span>{cinemaScreenings.length} available</span>
         </div>
         <div className="ticket-times" role="group" aria-label="Screening time">
-          {movie.screenings.map((screening) => (
+          {cinemaScreenings.map((screening) => (
             <button
               key={screening.id}
               className={`ticket-times__button${selectedScreeningId === String(screening.id) ? ' is-selected' : ''}`}
@@ -141,22 +189,25 @@ function TicketPage() {
               onClick={() => {
                 setBooking({
                   key: requestKey,
+                  cinemaId: selectedCinemaId,
                   screeningId: String(screening.id),
                   seats: [],
                   gapMessage: '',
                 })
               }}
             >
-              {formatScreeningDate(screening.date)}
+              {formatScreeningDate(screening.date)} · {screening.auditorium}
             </button>
           ))}
         </div>
       </section>
+      )}
 
+      {selectedScreening && (
       <section className="ticket-panel ticket-seating" aria-labelledby="seats-title">
         <div className="ticket-panel__heading">
           <h2 id="seats-title">Choose your seats</h2>
-          <span>{movie.auditorium} · {seatCapacity} seats</span>
+          <span>{selectedScreening.auditorium} · {selectedScreening.seatCapacity} seats</span>
         </div>
         <div className="ticket-doors" aria-label="Auditorium doors">
           <span>DOOR</span>
@@ -174,18 +225,18 @@ function TicketPage() {
                 aria-label={`Row ${row}`}
               >
                 <span className="ticket-seat-row__label" aria-hidden="true">{row}</span>
-                {seatNumbers.map((number) => {
-                  const seatIndex = (rowPosition - 1) * seatsPerRow + number
-                  const seat = seatIndex >= 13 ? seatIndex + 1 : seatIndex
+                {seats.slice((rowPosition - 1) * seatsPerRow, rowPosition * seatsPerRow).map((seat) => {
                   const selected = selectedSeats.includes(seat)
+                  const reserved = selectedScreening.takenSeats.includes(seat)
 
                   return (
                     <button
                       key={seat}
-                      className={`ticket-seat${selected ? ' is-selected' : ''}`}
+                      className={`ticket-seat${selected ? ' is-selected' : ''}${reserved ? ' is-reserved' : ''}`}
                       type="button"
-                      aria-label={`Row ${row}, seat ${seat}`}
+                      aria-label={`Row ${row}, seat ${seat}${reserved ? ', reserved' : ''}`}
                       aria-pressed={selected}
+                      disabled={reserved}
                       onClick={() => toggleSeat(seat)}
                     >
                       {seat}
@@ -198,12 +249,13 @@ function TicketPage() {
           })}
         </div>
         <div className="ticket-wheelchair-row">
+          <p>Wheelchair space booking is not available yet.</p>
           <div
             className="ticket-wheelchair-slots"
             role="img"
-            aria-label="10 wheelchair spaces"
+            aria-label={`${accessibleSeatCount} wheelchair spaces, booking not available`}
           >
-            {Array.from({ length: 10 }, (_, index) => (
+            {Array.from({length: accessibleSeatCount}, (_, index) => (
               <span className="ticket-wheelchair-slot" key={index}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="10" cy="4" r="2" />
@@ -223,6 +275,7 @@ function TicketPage() {
           <span><i className="ticket-legend__seat is-reserved" /> Reserved</span>
         </div>
       </section>
+      )}
 
       <footer className="ticket-summary">
         <div className="ticket-summary__selection" aria-live="polite">
@@ -242,11 +295,12 @@ function TicketPage() {
               {seatGapMessage}
             </span>
           )}
+          <span>Seat selections are not saved. Ticket purchasing is not available yet.</span>
         </div>
         <button
           className="ticket-summary__continue"
           type="button"
-          disabled={!selectedScreening || selectedSeats.length === 0}
+          disabled
         >
           Continue
         </button>

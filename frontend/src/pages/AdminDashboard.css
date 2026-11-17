@@ -281,9 +281,21 @@
   font-size: 11px;
 }
 
+.admin-coming-soon {
+display: inline-flex;
+align-items: center;
+gap: 8px;
+}
+
+.admin-field .admin-coming-soon input {
+width: 16px;
+height: 16px;
+padding: 0;
+}
+
 .admin-showtimes {
   display: grid;
-  grid-template-columns: minmax(170px, 0.72fr) 1.8fr;
+  grid-template-columns: 1fr;
   align-items: end;
   gap: 18px;
 }
@@ -576,10 +588,6 @@
 
   .admin-panel {
     padding: 20px;
-  }
-
-  .admin-showtimes {
-    grid-template-columns: minmax(150px, 0.7fr) 1fr;
   }
 
   .admin-table {

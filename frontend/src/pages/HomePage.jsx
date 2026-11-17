@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getMovieLocation, getMovies } from '../api/moviesApi.js'
+import { getMovies } from '../api/moviesApi.js'
 import MovieBox from '../components/MovieBox.jsx'
 
 function HomePage() {
@@ -27,7 +27,7 @@ function HomePage() {
   return (
     <main className="movie-catalog">
       <header className="movie-catalog__heading">
-        <h1>Now Showing</h1>
+        <h1>Movies</h1>
       </header>
       <section className="movie-catalog__grid" aria-label="Movies">
         {isLoading && <p role="status">Loading movies...</p>}
@@ -37,9 +37,8 @@ function HomePage() {
         )}
         {!isLoading && !loadError && movies.map((movie) => (
           <MovieBox
-            key={`${movie.id}-${movie.cinemaId}-${movie.auditoriumId}`}
+            key={movie.id}
             {...movie}
-            location={getMovieLocation(movie)}
           />
         ))}
       </section>
