@@ -16,7 +16,7 @@ function AdminRoute({ session, sessionLoading, sessionError }) {
   }
 
   if (!session) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
 
   if (session.role !== 'admin') {

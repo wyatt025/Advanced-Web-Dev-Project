@@ -53,14 +53,7 @@ function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
       </div>
 
       <nav className="site-sidebar__nav" aria-label="Main navigation">
-        <NavLink
-          className={({ isActive }) =>
-            `site-sidebar__link${isActive ? ' is-active' : ''}`
-          }
-          to="/user"
-        >
-          <span>User</span>
-        </NavLink>
+        
         {!sessionLoading && !sessionError && session?.role === 'admin' && (
           <NavLink
             className={({ isActive }) =>
@@ -79,15 +72,37 @@ function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
         >
           <span>About Us</span>
         </NavLink>
+        {!sessionLoading && !sessionError && session && (
+        <NavLink
+          className={({ isActive }) =>
+            `site-sidebar__link${isActive ? ' is-active' : ''}`
+          }
+          to="/user"
+        >
+          <span>User</span>
+        </NavLink>
+        )}
+        <NavLink
+          className={({ isActive }) =>
+            `site-sidebar__link${isActive ? ' is-active' : ''}`
+          }
+          to="/user"
+          style={({
+            marginTop: "auto"
+          })}
+        >
+          <span>User</span>
+        </NavLink>
       </nav>
 
+        
       <div className="site-sidebar__account">
         {sessionLoading ? (
           <p>Loading session...</p>
         ) : sessionError ? (
           <>
             <p role="alert">{sessionError}</p>
-            <button type="button" onClick={() => window.location.reload()}>
+            <button className="site-sidebar__account__link" type="button" onClick={() => window.location.reload()}>
               Retry
             </button>
           </>
@@ -95,6 +110,7 @@ function Sidebar({ session, sessionLoading, sessionError, onSessionChange }) {
           <>
             <button
               type="button"
+              className="site-sidebar__account__link"
               onClick={handleLogout}
               disabled={isLoggingOut}
             >

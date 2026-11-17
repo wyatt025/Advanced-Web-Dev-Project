@@ -96,6 +96,9 @@
 
 .site-sidebar__nav {
   display: flex;
+  flex-grow: 1;
+  margin-bottom: 1rem;
+  height: auto;
   flex-direction: column;
   gap: 5px;
 }
@@ -123,10 +126,39 @@
 }
 
 .site-sidebar__account {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   margin-top: auto;
   padding-top: 14px;
   border-top: 1px solid #40372d;
 }
+
+.site-sidebar__account__link {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 11px;
+  border-radius: 6px;
+  border-color: var(--accent-border);
+  background: rgba(0,0,0,0);
+  color: #d6c9a5;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.site-sidebar__account__link:hover,
+.site-sidebar__account__link.is-active {
+  color: var(--accent);
+  background: rgba(212, 55, 55, 0.12);
+}
+
+
 
 @media (max-width: 760px) {
   .site-sidebar {
