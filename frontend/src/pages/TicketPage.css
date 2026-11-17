@@ -188,6 +188,13 @@
   background: #83bd91;
 }
 
+.ticket-seat.is-reserved {
+  border-color: #c62828;
+  color: #fff;
+  background: #c62828;
+  cursor: not-allowed;
+}
+
 .ticket-wheelchair-row {
   display: grid;
   justify-items: center;

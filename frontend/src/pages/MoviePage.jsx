@@ -1,20 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { getMovie, getMovieLocation } from '../api/moviesApi.js'
+import { Link, useParams } from 'react-router-dom'
+import { getMovie } from '../api/moviesApi.js'
 import './MoviePage.css'
 
 function MoviePage() {
   const { movieId } = useParams()
-  const [searchParams] = useSearchParams()
-  const location = searchParams.get('location') || ''
-  const auditoriumId = searchParams.get('auditorium') || ''
-  const requestKey = `${movieId}:${location}:${auditoriumId}`
+  const requestKey = movieId
   const [movieResult, setMovieResult] = useState(null)
 
   useEffect(() => {
     const controller = new AbortController()
 
-    getMovie(movieId, { location, auditoriumId }, controller.signal)
+    getMovie(movieId, controller.signal)
       .then((movie) => setMovieResult({ key: requestKey, movie }))
       .catch((error) => {
         if (!controller.signal.aborted) {
@@ -26,7 +23,7 @@ function MoviePage() {
       })
 
     return () => controller.abort()
-  }, [movieId, location, auditoriumId, requestKey])
+  }, [movieId, requestKey])
 
   const currentResult = movieResult?.key === requestKey ? movieResult : null
 
@@ -50,13 +47,9 @@ function MoviePage() {
     )
   }
 
-  const catalogUrl = location
-    ? `/movies?location=${encodeURIComponent(location)}`
-    : '/movies'
-
   return (
     <main className="movie-page">
-      <Link className="movie-page__back" to={catalogUrl}>
+      <Link className="movie-page__back" to="/movies">
         Back to frontpage
       </Link>
       <section
@@ -74,13 +67,11 @@ function MoviePage() {
           <div className="movie-detail__metadata">
             {movie.genre && <span>{movie.genre}</span>}
             {movie.rating && <span>Age rating: {movie.rating}</span>}
-            {movie.cinema && <span>{movie.cinema}</span>}
-            {movie.auditorium && <span>{movie.auditorium}</span>}
           </div>
           {!movie.comingSoon && (
           <Link
             className="movie-detail__ticket-button"
-            to={`/movies/${movie.id}/tickets?location=${encodeURIComponent(location || getMovieLocation(movie))}&auditorium=${encodeURIComponent(movie.auditoriumId)}`}
+            to={`/movies/${movie.id}/tickets`}
           >
             Buy a ticket
           </Link>

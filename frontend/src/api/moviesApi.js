@@ -7,24 +7,14 @@ export async function getMovies(signal) {
     return readMovieResponse(response);
 }
 
-export async function getMovie(movieId, { location, auditoriumId } = {}, signal) {
+export async function getMovie(movieId, signal) {
     const response = await fetch(`/api/user/movies/${encodeURIComponent(movieId)}`, {
         cache: 'no-store',
         signal,
     });
     const movies = await readMovieResponse(response);
 
-    return movies.find((movie) =>
-        (!location || getMovieLocation(movie) === location) &&
-        (!auditoriumId || String(movie.auditoriumId) === String(auditoriumId))
-    ) || null;
-}
-
-export function getMovieLocation(movie) {
-    const cinemaInfo = `${movie.cinema || ''} ${movie.cinemaAddress || ''}`.toLowerCase();
-    if (cinemaInfo.includes('oulu')) return 'Oulu';
-    if (cinemaInfo.includes('tampere')) return 'Tampere';
-    return movie.cinema || '';
+    return movies[0] || null;
 }
 
 async function readMovieResponse(response) {

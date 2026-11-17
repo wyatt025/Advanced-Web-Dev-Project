@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getMovieLocation, getMovies } from '../api/moviesApi.js'
+import { getMovies } from '../api/moviesApi.js'
 import MovieBox from '../components/MovieBox.jsx'
 
 function HomePage() {
@@ -37,9 +37,8 @@ function HomePage() {
         )}
         {!isLoading && !loadError && movies.map((movie) => (
           <MovieBox
-            key={`${movie.id}-${movie.cinemaId}-${movie.auditoriumId}`}
+            key={movie.id}
             {...movie}
-            location={getMovieLocation(movie)}
           />
         ))}
       </section>

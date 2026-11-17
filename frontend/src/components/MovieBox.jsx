@@ -1,15 +1,12 @@
 import './MovieBox.css'
 import { Link } from 'react-router-dom'
 
-function MovieBox({ id, title, genre, rating, posterUrl, location, auditoriumId, comingSoon }) {
+function MovieBox({ id, title, genre, rating, posterUrl, comingSoon }) {
   return (
     <article className="movie-box">
       <Link
         className="movie-box__link"
-        to={{
-          pathname: `/movies/${id}`,
-          search: `?location=${encodeURIComponent(location)}&auditorium=${encodeURIComponent(auditoriumId)}`,
-        }}
+        to={`/movies/${id}`}
       >
         <div className="movie-box__poster">
           {posterUrl && <img src={posterUrl} alt={`${title} poster`} />}
