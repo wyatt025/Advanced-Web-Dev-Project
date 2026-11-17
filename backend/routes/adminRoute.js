@@ -6,12 +6,14 @@ const { movieSearcher } = require('../services/omdbService');
 const { omdbContentFilter } = require('../helpers/movieMapper');
 const bcrypt = require('bcrypt'); 
 const { validateMovie, MovieValidationError } = require('../helpers/validateMovie');
+const { validateScreenings } = require('../helpers/validateScreenings');
 
 
 
 //-------- NOTE: ROUTES MAY NEED UPDATING ONCE DATABASE SCHEMA IS FINALIZED
 
 //----- Admin Management Routes -----------
+
 adminRouter.use(authenticate);
 adminRouter.use(requireRole('admin'));
 
@@ -75,6 +77,7 @@ adminRouter.delete('/:id', async (req, res) => {
 
 
 //----- OMDb Search Routes -----
+
 adminRouter.get('/movies/search', async (req, res) => {
     try {
         const { title } = req.query;
@@ -129,6 +132,15 @@ adminRouter.get('/movies/details/:imdbID', async (req, res) => {
         return res.status(500).json({ error: 'Could not load movie details' });
     }
 });
+adminRouter.get('/auditoriums', async (req, res) => {
+    try {
+        const auditoriums = await adminModel.getOpenAuditoriums();
+        return res.json(auditoriums);
+    } catch (err) {
+        console.error('Auditorium lookup failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not load auditoriums' });
+    }
+});
 
 //----- Movie Management Routes -----------
 adminRouter.get('/movies', async (req, res) => {
@@ -156,7 +168,8 @@ adminRouter.get('/movies/:id', async (req, res) => {
 adminRouter.post('/movies', async (req, res) => {
     try {
         const movie = validateMovie(req.body);
-        const result = await adminModel.createMovie(movie);
+        const screenings = validateScreenings(req.body.screenings, movie.coming_soon);
+        const result = await adminModel.createMovieWithScreenings(movie, screenings);
         return res.status(201).json(result);
     } catch (err) {
         if (err instanceof MovieValidationError) {
@@ -166,7 +179,9 @@ adminRouter.post('/movies', async (req, res) => {
         if (err.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: 'Movie has already been added' });
         }
-
+        if (err.code === 'SCREENING_CONFLICT') {
+            return res.status(409).json({ error: err.message });
+        }
         console.error('Movie creation failed:', err.code || 'UNKNOWN_ERROR');
         return res.status(500).json({ error: 'Could not save movie' });
     }

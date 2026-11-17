@@ -107,17 +107,27 @@ function validateMovie(input) {
     ) {
         throw new MovieValidationError('Price must be positive and have at most two decimal places');
     }
+    const runtimeMinutes = optionalInteger('runtime_minutes', 1, 9999999);
+
+    if (runtimeMinutes === null) {
+    throw new MovieValidationError('Movie runtime is required');
+    }
+
+    if (input.coming_soon !== undefined && typeof input.coming_soon !== 'boolean') {
+    throw new MovieValidationError('Coming soon must be true or false');
+    }
         return {
         title: input.title.trim(),
         imdb_id: imdbId,
         release_year: optionalInteger('release_year', 1000, 9999),
-        runtime_minutes: optionalInteger('runtime_minutes', 1, 9999999),
+        runtime_minutes: runtimeMinutes,
         rated: optionalText('rated', 20),
         genre: optionalText('genre', 255),
         director: optionalText('director', 255),
         writer: optionalText('writer'),
         actors: optionalText('actors'),
         plot: optionalText('plot'),
+        coming_soon: input.coming_soon ?? false,
         languages: optionalText('languages', 255),
         poster_url: optionalText('poster_url'),
         rating_imdb: optionalText('rating_imdb', 20),

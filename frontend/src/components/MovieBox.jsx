@@ -1,7 +1,7 @@
 import './MovieBox.css'
 import { Link } from 'react-router-dom'
 
-function MovieBox({ id, title, genre, rating, posterUrl, location, auditoriumId }) {
+function MovieBox({ id, title, genre, rating, posterUrl, location, auditoriumId, comingSoon }) {
   return (
     <article className="movie-box">
       <Link
@@ -19,6 +19,7 @@ function MovieBox({ id, title, genre, rating, posterUrl, location, auditoriumId 
           {genre && <p>{genre}</p>}
           {rating && <p className="movie-box__rating">Rating: {rating}</p>}
         </div>
+        {comingSoon && <span className="movie-box__coming-soon">Coming Soon</span>}
       </Link>
     </article>
   )

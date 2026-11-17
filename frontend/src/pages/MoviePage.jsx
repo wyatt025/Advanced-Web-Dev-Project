@@ -69,7 +69,7 @@ function MoviePage() {
           </div>
         )}
         <div className="movie-detail__content">
-          <p className="movie-detail__eyebrow">Now Showing</p>
+          <p className="movie-detail__eyebrow">{movie.comingSoon ? 'Coming soon' : 'Now Showing'}</p>
           <h1 id="movie-title">{movie.title}</h1>
           <div className="movie-detail__metadata">
             {movie.genre && <span>{movie.genre}</span>}
@@ -77,12 +77,14 @@ function MoviePage() {
             {movie.cinema && <span>{movie.cinema}</span>}
             {movie.auditorium && <span>{movie.auditorium}</span>}
           </div>
+          {!movie.comingSoon && (
           <Link
             className="movie-detail__ticket-button"
             to={`/movies/${movie.id}/tickets?location=${encodeURIComponent(location || getMovieLocation(movie))}&auditorium=${encodeURIComponent(movie.auditoriumId)}`}
           >
             Buy a ticket
           </Link>
+          )}
           {movie.plot && (
             <div className="movie-detail__section">
               <h2>About the movie</h2>

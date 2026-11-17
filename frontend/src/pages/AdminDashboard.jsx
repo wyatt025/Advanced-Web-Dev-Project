@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   searchExternalMovieDatabase,
   addMovieManually,
   getExternalMovieDetails,
+  getOpenAuditoriums,
 } from '../api/adminApi'
 import './AdminDashboard.css'
 
@@ -62,6 +63,33 @@ function AdminDashboard() {
   const [searchPage, setSearchPage] = useState(1)
   const [totalResults, setTotalResults] = useState(0)
   const [searchedTitle, setSearchedTitle] = useState('')
+  const [comingSoon, setComingSoon] = useState(false)
+  const [screenings, setScreenings] = useState([{ auditoriumId: '', localStart: '' }])
+  const [auditoriums, setAuditoriums] = useState([])
+  const [auditoriumError, setAuditoriumError] = useState('')
+  const [isLoadingAuditoriums, setIsLoadingAuditoriums] = useState(true)
+  const [auditoriumRequest, setAuditoriumRequest] = useState(0)
+  const moviePickerRef = useRef(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    getOpenAuditoriums(controller.signal)
+      .then((items) => {
+        setAuditoriums(items)
+        setAuditoriumError('')
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setAuditoriumError(error.message || 'Could not load auditoriums.')
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingAuditoriums(false)
+      })
+
+    return () => controller.abort()
+  }, [auditoriumRequest])
 
   function handleMovieFieldChange(e) {
     const { name, value } = e.target
@@ -98,6 +126,9 @@ function AdminDashboard() {
         imdbID: details.imdb_id,
         Title: details.title,
       })
+      if (moviePickerRef.current) {
+        moviePickerRef.current.open = false
+      }
       setFormOpen(true)
       setMovieStatus(`Loaded ${details.title}. Review the movie fields below.`)
     } catch (error) {
@@ -156,6 +187,26 @@ function AdminDashboard() {
       return
     }
 
+    const runtime = Number(movieForm.runtime_minutes)
+    if (!Number.isSafeInteger(runtime) || runtime < 1 || runtime > 9999999) {
+      setMovieStatus('Enter a valid runtime in minutes (1-9999999).')
+      return
+    }
+    if (!comingSoon) {
+      if (isLoadingAuditoriums || auditoriumError || auditoriums.length === 0) {
+        setMovieStatus('Open auditoriums must be available before scheduling a screening.')
+        return
+      }
+      if (screenings.some((screening) =>
+          !Number.isSafeInteger(Number(screening.auditoriumId)) ||
+          Number(screening.auditoriumId) < 1 || !screening.localStart
+        )) {
+        setMovieStatus('Choose an auditorium and date and time for each screening.')
+        return
+      }
+    }
+
+
     // Accept up to six digits before the decimal and up to two after it.
     const priceFormat = /^\d{1,6}(\.\d{1,2})?$/
 
@@ -171,6 +222,11 @@ function AdminDashboard() {
       const savedMovie = await addMovieManually({
         ...movieForm,
         price: ticketPrice,
+        coming_soon: comingSoon,
+        screenings: comingSoon ? [] : screenings.map((screening) => ({
+          auditoriumId: Number(screening.auditoriumId),
+          localStart: screening.localStart
+        }))
       })
 
       setMovieStatus(`Added ${savedMovie.title} successfully.`)
@@ -183,6 +239,8 @@ function AdminDashboard() {
       setSearchTitle('')
       setImdbLookup('')
       setTicketPrice('')
+      setComingSoon(false)
+      setScreenings([{ auditoriumId: '', localStart: '' }])
     } catch (error) {
       setMovieStatus(error.message || 'Could not add the movie.')
     } finally {
@@ -207,7 +265,7 @@ function AdminDashboard() {
 
         <form className="admin-movie-form" onSubmit={handleAddMovie} noValidate>
           <div className="admin-movie-picker">
-            <details className="admin-movie-dropdown">
+            <details className="admin-movie-dropdown" ref={moviePickerRef}>
               <summary className="admin-field">
                 Movie
                 <span className="admin-movie-dropdown__trigger">
@@ -455,31 +513,90 @@ function AdminDashboard() {
 
           <div className="admin-section-heading">
             <div>
-              <h3>Showtimes</h3>
-              <p>Screening scheduling is not available yet. Adding a movie does not create a screening.</p>
+              <h3>Screenings</h3>
+              <p>Times are entered in Finnish local time.</p>
             </div>
           </div>
-          <div className="admin-showtimes">
-            <label className="admin-field">
-              Screening date
-              <input type="date" name="screening-date" disabled />
-            </label>
-            <fieldset className="admin-time-options" disabled>
-              <legend>Available times</legend>
-              <label>
-                <input type="radio" name="showtime" value="12:30" />
-                <span>12:30 PM</span>
-              </label>
-              <label>
-                <input type="radio" name="showtime" value="15:45" />
-                <span>3:45 PM</span>
-              </label>
-              <label>
-                <input type="radio" name="showtime" value="18:30" />
-                <span>6:30 PM</span>
-              </label>
-            </fieldset>
-          </div>
+
+          <label className="admin-field">
+            <span className="admin-coming-soon">
+              <input
+                type="checkbox"
+                checked={comingSoon}
+                onChange={(event) => setComingSoon(event.target.checked)}
+                disabled={isAdding}
+              />{' '}
+              Coming soon (no screenings yet)
+            </span>
+          </label>
+
+          {!comingSoon && (
+            <div className="admin-showtimes">
+              {isLoadingAuditoriums && <p role="status">Loading auditoriums...</p>}
+              {auditoriumError && (
+                <div role="alert">
+                  <p>{auditoriumError}</p>
+                  <button type="button" onClick={() => {
+                    setAuditoriumError('')
+                    setIsLoadingAuditoriums(true)
+                    setAuditoriumRequest((request) => request + 1)
+                  }}>
+                    Retry
+                  </button>
+                </div>
+              )}
+              {!isLoadingAuditoriums && !auditoriumError && auditoriums.length === 0 && (
+                <p>No open auditoriums are available.</p>
+              )}
+              {screenings.map((screening, index) => (
+                <fieldset key={index} disabled={isAdding || isLoadingAuditoriums || Boolean(auditoriumError)}>
+                  <legend>Screening {index + 1}</legend>
+                  <label className="admin-field">
+                    Cinema and auditorium
+                    <select
+                      value={screening.auditoriumId}
+                      onChange={(event) => setScreenings((current) => current.map((item, i) =>
+                        i === index ? { ...item, auditoriumId: event.target.value } : item
+                      ))}
+                      required
+                    >
+                      <option value="">Select an auditorium</option>
+                      {auditoriums.map((auditorium) => (
+                        <option key={auditorium.id} value={auditorium.id}>
+                          {auditorium.cinemaName} — {auditorium.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="admin-field">
+                    Date and time
+                    <input
+                      type="datetime-local"
+                      value={screening.localStart}
+                      onChange={(event) => setScreenings((current) => current.map((item, i) =>
+                        i === index ? { ...item, localStart: event.target.value } : item
+                      ))}
+                      required
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={screenings.length === 1}
+                    onClick={() => setScreenings((current) => current.filter((_, i) => i !== index))}
+                  >
+                    Remove screening
+                  </button>
+                </fieldset>
+              ))}
+              <button
+                type="button"
+                disabled={isAdding}
+                onClick={() => setScreenings((current) => [...current, { auditoriumId: '', localStart: '' }])}
+              >
+                Add another screening
+              </button>
+            </div>
+          )}
 
           <div className="admin-form-divider" />
 

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `movies` (
   `rated` VARCHAR(20),
   `released_date` DATE,
   `runtime_minutes` INT,
+  `coming_soon` BOOL NOT NULL DEFAULT FALSE,
   `genre` VARCHAR(255),
   `director` VARCHAR(255),
   `writer` TEXT,
