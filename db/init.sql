@@ -26,13 +26,14 @@ CREATE TABLE IF NOT EXISTS `cinemas` (
   `phone` VARCHAR(50)
 ) ENGINE=InnoDB;
 
--- id, name, cinema_id, isOpen, maxSeats
+-- id, name, cinema_id, isOpen, maxSeats (total), accessibleSeats (included in total)
 CREATE TABLE IF NOT EXISTS `auditoriums` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255),
   `cinema_id` INT NOT NULL,
   `isOpen` BOOL NOT NULL,
   `maxSeats` INT NOT NULL,
+  `accessibleSeats` INT NOT NULL DEFAULT 10,
   CONSTRAINT `chk_aud_seats` CHECK (`maxSeats` > 0),
   CONSTRAINT `fk_aud_cinema` FOREIGN KEY (`cinema_id`)
     REFERENCES `cinemas`(`id`) ON DELETE CASCADE ON UPDATE NO ACTION
