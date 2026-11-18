@@ -9,7 +9,6 @@ const { authCookieOptions } = require('./middleware/authCookie');
 const { authenticate } = require('./middleware/token&roleAuth');
 const storeRouter = require('./routes/store');
 
-
 const port = process.env.PORT || 3001;
 
 app.use(storeRouter);
