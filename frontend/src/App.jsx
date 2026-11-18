@@ -12,6 +12,7 @@ import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import MoviePage from './pages/MoviePage.jsx'
 import TicketPage from './pages/TicketPage.jsx'
+import { Cancel, Success } from './PaymentPages.jsx'
 
 
 function App() {
@@ -79,6 +80,8 @@ function App() {
             <Route path="/movies/:movieId" element={<MoviePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/movies" element={<HomePage />} />
+            <Route path="/success" element={<Success />} />
+            <Route path="/cancel" element={<Cancel />} />
             <Route path="/login" element={<LoginPage onSessionChange={updateSession} />} />
             <Route path="/admin" element={
               <AdminRoute

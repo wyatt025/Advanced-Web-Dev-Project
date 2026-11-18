@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getMovie } from '../api/moviesApi.js'
+import BuyTickets from '../BuyTickets.jsx'
 import { hasAvailableRegularSeat, regularSeats } from './screeningAvailability.js'
 import './TicketPage.css'
 
@@ -305,6 +306,7 @@ function TicketPage() {
           Continue
         </button>
       </footer>
+      <BuyTickets />
     </main>
   )
 }
