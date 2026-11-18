@@ -42,11 +42,60 @@ function AdminSidebar({ session, sessionLoading, sessionError, onSessionChange }
           </NavLink>
         )}
 
-        <span>Movies</span>
-        <span>Screenings</span>
-        <span>Reservations</span>
-        <span>Users</span>
-        <span>Locations</span>
+        {!sessionLoading && !sessionError && session?.role === 'admin' && (
+          <NavLink
+            className={({ isActive }) =>
+              `site-sidebar__link${isActive ? ' is-active' : ''}`
+            }
+            to="/admin"
+          >
+            <span>Movies</span>
+          </NavLink>
+        )}
+
+        {!sessionLoading && !sessionError && session?.role === 'admin' && (
+          <NavLink
+            className={({ isActive }) =>
+              `site-sidebar__link${isActive ? ' is-active' : ''}`
+            }
+            to="/admin/screenings"
+          >
+            <span>Screenings</span>
+          </NavLink>
+        )}
+
+        {!sessionLoading && !sessionError && session?.role === 'admin' && (
+          <NavLink
+            className={({ isActive }) =>
+              `site-sidebar__link${isActive ? ' is-active' : ''}`
+            }
+            to="/admin/reservations"
+          >
+            <span>Reservations</span>
+          </NavLink>
+        )}
+
+        {!sessionLoading && !sessionError && session?.role === 'admin' && (
+          <NavLink
+            className={({ isActive }) =>
+              `site-sidebar__link${isActive ? ' is-active' : ''}`
+            }
+            to="/admin/users"
+          >
+            <span>Users</span>
+          </NavLink>
+        )}
+
+        {!sessionLoading && !sessionError && session?.role === 'admin' && (
+          <NavLink
+            className={({ isActive }) =>
+              `site-sidebar__link${isActive ? ' is-active' : ''}`
+            }
+            to="/admin/locations"
+          >
+            <span>Locations</span>
+          </NavLink>
+        )}
 
         {!sessionLoading && !sessionError && session && (
         <NavLink
