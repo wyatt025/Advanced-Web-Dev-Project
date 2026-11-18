@@ -79,6 +79,18 @@ function App() {
             <Route path="/movies/:movieId" element={<MoviePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/movies" element={<HomePage />} />
+            <Route path="/success" element={
+              <section>
+                <h1>Payment successful</h1>
+                <p>Your Stripe payment has been received. Your ticket confirmation is being processed.</p>
+              </section>
+            } />
+            <Route path="/cancel" element={
+              <section>
+                <h1>Checkout cancelled</h1>
+                <p>No payment was completed. Your selected seats have been released.</p>
+              </section>
+            } />
             <Route path="/login" element={<LoginPage onSessionChange={updateSession} />} />
             <Route path="/admin" element={
               <AdminRoute

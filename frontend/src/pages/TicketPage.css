@@ -294,6 +294,29 @@
   font-size: 11px;
 }
 
+.ticket-summary__checkout {
+  display: grid;
+  gap: 5px;
+  min-width: 220px;
+}
+
+.ticket-summary__checkout label {
+  color: #b7ad9c;
+  font-size: 11px;
+}
+
+.ticket-summary__checkout input {
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 1px solid #494034;
+  border-radius: 6px;
+  color: var(--text-h);
+  background: #12110f;
+  font: inherit;
+  font-size: 12px;
+}
+
 .ticket-summary__continue {
   min-height: 40px;
   padding: 0 18px;
