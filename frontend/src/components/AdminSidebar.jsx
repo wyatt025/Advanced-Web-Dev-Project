@@ -29,29 +29,6 @@ function AdminSidebar({ session, sessionLoading, sessionError, onSessionChange }
         <img src={rioLogo} alt="Rio - Oulu Tampere" />
       </Link>
 
-      <div className="site-sidebar__search" role="search">
-        <label className="site-sidebar__search-label" htmlFor="movie-search">
-          Search movies
-        </label>
-        <input
-          id="movie-search"
-          type="search"
-          placeholder="Search movies..."
-        />
-        <button className="site-sidebar__search-button" type="button" aria-label="Search">
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            fill="none"
-          >
-            <circle cx="10.8" cy="10.8" r="6.8" />
-            <path d="m16 16 4.5 4.5" />
-          </svg>
-        </button>
-      </div>
-
       <nav className="site-sidebar__nav" aria-label="Main navigation">
         
         {!sessionLoading && !sessionError && session?.role === 'admin' && (
@@ -64,6 +41,13 @@ function AdminSidebar({ session, sessionLoading, sessionError, onSessionChange }
             <span>Admin Dashboard</span>
           </NavLink>
         )}
+
+        <span>Movies</span>
+        <span>Screenings</span>
+        <span>Reservations</span>
+        <span>Users</span>
+        <span>Locations</span>
+
         {!sessionLoading && !sessionError && session && (
         <NavLink
           className={({ isActive }) =>

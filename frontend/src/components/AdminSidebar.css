@@ -25,6 +25,7 @@
   align-self: stretch;
   justify-content: center;
   margin: 0 0 28px;
+  width: 5em;
 }
 
 .site-sidebar__brand img {
