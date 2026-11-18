@@ -43,9 +43,6 @@ function TicketPage() {
   const requestKey = movieId
   const [movieResult, setMovieResult] = useState(null)
   const [booking, setBooking] = useState(null)
-  const [email, setEmail] = useState('')
-  const [checkoutLoading, setCheckoutLoading] = useState(false)
-  const [checkoutError, setCheckoutError] = useState('')
   const currentBooking = booking?.key === requestKey
     ? booking
     : { cinemaId: '', screeningId: '', seats: [], gapMessage: '' }
@@ -132,32 +129,6 @@ function TicketPage() {
         ? 'Please do not leave a gap between reserved seats.'
         : '',
     })
-  }
-
-  async function continueToCheckout() {
-    if (!selectedScreening || selectedSeats.length === 0) return
-    setCheckoutLoading(true)
-    setCheckoutError('')
-    try {
-      const response = await fetch('/api/checkout-sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({
-          screeningId: selectedScreening.id,
-          seatIds: selectedSeats,
-          email,
-        }),
-      })
-      const body = await response.json()
-      if (!response.ok) throw new Error(body.error || 'Could not start checkout.')
-      if (!body.url) throw new Error('Stripe did not return a checkout URL.')
-      window.location.assign(body.url)
-    } catch (error) {
-      setCheckoutError(error.message || 'Could not start checkout.')
-    } finally {
-      setCheckoutLoading(false)
-    }
   }
 
   return (
@@ -324,29 +295,14 @@ function TicketPage() {
               {seatGapMessage}
             </span>
           )}
-          <span>Seat selections are held for 31 minutes during checkout.</span>
-        </div>
-        <div className="ticket-summary__checkout">
-          <label htmlFor="ticket-email">Email</label>
-          <input
-            id="ticket-email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
-            disabled={checkoutLoading}
-          />
-          {checkoutError && (
-            <span className="ticket-seat-warning" role="alert">{checkoutError}</span>
-          )}
+          <span>Seat selections are not saved. Ticket purchasing is not available yet.</span>
         </div>
         <button
           className="ticket-summary__continue"
           type="button"
-          disabled={!selectedScreening || selectedSeats.length === 0 || !email.trim() || checkoutLoading}
-          onClick={continueToCheckout}
+          disabled
         >
-          {checkoutLoading ? 'Opening checkout...' : 'Continue'}
+          Continue
         </button>
       </footer>
     </main>
