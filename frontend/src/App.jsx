@@ -12,7 +12,7 @@ import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import MoviePage from './pages/MoviePage.jsx'
 import TicketPage from './pages/TicketPage.jsx'
-import { Cancel, Success } from './PaymentPages.jsx'
+import { Cancel, Success } from './pages/PaymentPages.jsx'
 
 
 function App() {
