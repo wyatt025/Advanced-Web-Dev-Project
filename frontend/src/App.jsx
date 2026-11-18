@@ -55,12 +55,21 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar 
-        session={session}
-        sessionLoading={sessionLoading}
-        sessionError={sessionError}
-        onSessionChange={updateSession}
-      />
+      {session?.role === 'admin' ? (
+        <AdminSidebar 
+          session={session}
+          sessionLoading={sessionLoading}
+          sessionError={sessionError}
+          onSessionChange={updateSession}
+        />
+      ) : (
+        <Sidebar 
+          session={session}
+          sessionLoading={sessionLoading}
+          sessionError={sessionError}
+          onSessionChange={updateSession}
+        />
+      )}
       <div className="app-content">
         <main className="app-main">
           <Routes>
