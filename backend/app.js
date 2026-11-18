@@ -12,10 +12,11 @@ const storeRouter = require('./routes/store');
 
 const port = process.env.PORT || 3001;
 
-app.use(storeRouter);
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(checkOrigin);
+
 
 const pools = require('./helpers/db'); 
 
@@ -32,6 +33,7 @@ app.get('/auth/me', authenticate, (req, res) => {
 
 app.use('/admin', adminRouter);
 app.use('/user', userRouter);
+app.use(storeRouter);
 
 
 app.listen(port, () => {
