@@ -1,5 +1,6 @@
 const pools = require('../helpers/db');
 const { MovieValidationError } = require('../helpers/validateMovie');
+const { checkScreeningAvailability } = require('../helpers/screeningAvailability');
 
 const userFields = 'id, name, email, phone, role, created_at';
 const movieFields = [
@@ -59,30 +60,6 @@ async function deleteUser(id, role) {
 async function getMovieById(id) {
     const [rows] = await pools.admin.execute('SELECT * FROM movies WHERE id = ?', [id]);
     return rows[0];
-}
-
-async function checkScreeningAvailability(connection, screening, runtimeMinutes) {
-    const [conflicts] = await connection.execute(
-        `SELECT s.id, m.runtime_minutes
-            FROM screenings s
-            JOIN movies m ON m.id = s.movie_id
-            WHERE s.auditorium_id = ?
-            AND s.date < DATE_ADD(?, INTERVAL ? MINUTE)
-            AND (
-            m.runtime_minutes IS NULL OR m.runtime_minutes <= 0
-            OR DATE_ADD(s.date, INTERVAL (m.runtime_minutes + 60) MINUTE) > ?
-            )
-            LIMIT 1`,
-            [screening.auditoriumId, screening.date, runtimeMinutes + 60, screening.date]
-            );
-            if (conflicts.length > 0) {
-                const error = new Error(conflicts[0].runtime_minutes == null || conflicts[0].runtime_minutes <= 0
-                                        ? 'An existing screening has no valid movie runtime; its availability cannot be checked'
-                                        : 'The auditorium is already booked during this time'
-                                        );
-                error.code = 'SCREENING_CONFLICT';
-                throw error;
-            }
 }
 
 const adminModel = {

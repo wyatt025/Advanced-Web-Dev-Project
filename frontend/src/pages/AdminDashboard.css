@@ -101,7 +101,7 @@
 .admin-movies h1 { margin: 0 0 18px; color: var(--text-h); }
 .admin-movies__toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; }
 .admin-movies__filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
-.admin-movies__list { list-style: none; padding: 0; margin: 18px 0 0; border: 1px solid #383027; border-radius: 10px; overflow: hidden; }
+.admin-movies__list { list-style: none; padding: 0; margin: 18px 0 0; border: 1px solid #383027; border-radius: 10px; max-height: 60vh; overflow-y: auto; }
 .admin-movies__row { display: flex; align-items: center; gap: 14px; padding: 14px; background: #12110f; }
 .admin-movies__row + .admin-movies__row { border-top: 1px solid #383027; }
 .admin-movies__row img, .admin-movies__poster-placeholder { width: 54px; height: 80px; object-fit: cover; background: #2a2520; flex: none; }
@@ -110,6 +110,14 @@
 .admin-movies__details span { color: #a99f8d; font-size: 13px; }
 .admin-movies__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .admin-feedback { width: 100%; max-width: 1000px; margin: 0 auto; }
+.admin-screening-form__fields { display: grid; gap: 14px; padding: 0; border: 0; }
+.admin-screening-form__fields select[multiple] { height: 110px; padding: 6px; }
+.admin-screening-form__fields > .admin-action { justify-self: start; }
+.admin-screening-form__hint { margin: 0; color: #a99f8d; font-size: 12px; }
+.admin-screening-form h2 { margin-top: 24px; font-size: 18px; }
+.admin-screening-queue { max-height: 240px; }
+.admin-screening-form__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.ticket-seat.admin-screening-seat { display: grid; place-items: center; cursor: default; }
 
 .admin-confirmation {
   width: min(420px, calc(100% - 32px));

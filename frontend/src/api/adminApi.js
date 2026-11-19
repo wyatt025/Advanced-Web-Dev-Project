@@ -89,3 +89,35 @@ export async function deleteMovie(movieId) {
     }
     return response.json();
 }
+
+async function screeningRequest(path, options = {}) {
+    const response = await fetch(`/api/admin/screenings${path}`, {
+        cache: 'no-store',
+        ...options,
+    });
+    if (!response.ok) {
+        if (response.status === 401) throw new Error('Your session has expired. Please log in again.');
+        if (response.status === 403) throw new Error('Admin access is required, or the request origin is not allowed.');
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            const body = await response.json();
+            if (typeof body.error === 'string') throw new Error(body.error);
+        }
+        throw new Error(`Could not manage screenings (HTTP ${response.status}).`);
+    }
+    return response.json();
+}
+
+export const getAdminScreenings = () => screeningRequest('');
+export const getAdminScreening = (id) => screeningRequest(`/${encodeURIComponent(id)}`);
+export const checkAdminScreenings = (screenings, excludeId) => screeningRequest('/check', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ screenings, ...(excludeId ? { excludeId } : {}) }),
+});
+export const createAdminScreenings = (screenings) => screeningRequest('', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ screenings }),
+});
+export const updateAdminScreening = (id, screening) => screeningRequest(`/${encodeURIComponent(id)}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(screening),
+});
+export const deleteAdminScreening = (id) => screeningRequest(`/${encodeURIComponent(id)}`, { method: 'DELETE' });

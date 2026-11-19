@@ -16,6 +16,7 @@ const { validateScreenings } = require('../helpers/validateScreenings');
 
 adminRouter.use(authenticate);
 adminRouter.use(requireRole('admin'));
+adminRouter.use('/screenings', require('./adminScreeningsRoute'));
 
 adminRouter.get('/', async (req, res) => {
     try {

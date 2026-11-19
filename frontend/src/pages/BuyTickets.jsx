@@ -34,7 +34,10 @@ export default function BuyTickets() {
   return (
     <section>
       <h2>{screening.title}</h2>
-      <p>{new Date(screening.startsAt).toLocaleString()}</p>
+      <p>{new Date(screening.startsAt).toLocaleString('en-GB', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+      })}</p>
       <div>
         {screening.seats.map((seat) => (
           <button key={seat} disabled={unavailable.has(seat)} onClick={() => toggle(seat)}>
