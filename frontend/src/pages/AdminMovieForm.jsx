@@ -51,7 +51,7 @@ function AdminMovieForm({ movie, onSaved, onCancel, onDelete, requestConfirmatio
   const [totalResults, setTotalResults] = useState(0)
   const [searchedTitle, setSearchedTitle] = useState('')
   const [comingSoon, setComingSoon] = useState(Boolean(movie?.coming_soon))
-  const [screenings, setScreenings] = useState([{ auditoriumId: '', localStart: '' }])
+  const [screenings, setScreenings] = useState([{ auditoriumId: '', date: '', time: '' }])
   const [auditoriums, setAuditoriums] = useState([])
   const [auditoriumError, setAuditoriumError] = useState('')
   const [isLoadingAuditoriums, setIsLoadingAuditoriums] = useState(!isEditing)
@@ -187,7 +187,7 @@ function AdminMovieForm({ movie, onSaved, onCancel, onDelete, requestConfirmatio
       }
       if (screenings.some((screening) =>
           !Number.isSafeInteger(Number(screening.auditoriumId)) ||
-          Number(screening.auditoriumId) < 1 || !screening.localStart
+          Number(screening.auditoriumId) < 1 || !screening.date || !screening.time
         )) {
         setMovieStatus('Choose an auditorium and date and time for each screening.')
         return
@@ -216,7 +216,7 @@ function AdminMovieForm({ movie, onSaved, onCancel, onDelete, requestConfirmatio
             coming_soon: comingSoon,
             screenings: comingSoon ? [] : screenings.map((screening) => ({
               auditoriumId: Number(screening.auditoriumId),
-              localStart: screening.localStart
+              localStart: `${screening.date}T${screening.time}`
             }))
           }
           const savedMovie = isEditing
@@ -550,17 +550,18 @@ function AdminMovieForm({ movie, onSaved, onCancel, onDelete, requestConfirmatio
                       ))}
                     </select>
                   </label>
-                  <label className="admin-field">
-                    Date and time
-                    <input
-                      type="datetime-local"
-                      value={screening.localStart}
-                      onChange={(event) => setScreenings((current) => current.map((item, i) =>
-                        i === index ? { ...item, localStart: event.target.value } : item
-                      ))}
-                      required
-                    />
-                  </label>
+                  <div className="admin-screening-date-time">
+                    <label className="admin-field">Date
+                      <input type="date" value={screening.date} onChange={(event) => setScreenings((current) => current.map((item, i) =>
+                        i === index ? { ...item, date: event.target.value } : item
+                      ))} required />
+                    </label>
+                    <label className="admin-field">Time (Finland)
+                      <input type="time" value={screening.time} onChange={(event) => setScreenings((current) => current.map((item, i) =>
+                        i === index ? { ...item, time: event.target.value } : item
+                      ))} required />
+                    </label>
+                  </div>
                   <button
                     className="admin-action admin-action--red"
                     type="button"
@@ -575,7 +576,7 @@ function AdminMovieForm({ movie, onSaved, onCancel, onDelete, requestConfirmatio
                 className="admin-action admin-action--green"
                 type="button"
                 disabled={isAdding}
-                onClick={() => setScreenings((current) => [...current, { auditoriumId: '', localStart: '' }])}
+                onClick={() => setScreenings((current) => [...current, { auditoriumId: '', date: '', time: '' }])}
               >
                 Add another screening
               </button>

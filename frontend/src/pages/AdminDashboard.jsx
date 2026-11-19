@@ -50,7 +50,7 @@ function ConfirmationDialog({ confirmation, onDismiss }) {
       <div className="admin-confirmation__actions">
         <button
           type="button"
-          className="admin-action admin-action--green"
+          className={`admin-action admin-action--green${isDeleteFinalStep ? '' : ' admin-confirmation__yes'}`}
           disabled={isDeleteFinalStep && text !== 'DELETE'}
           onClick={() => {
             if (isDelete && !isDeleteFinalStep) {
@@ -245,17 +245,19 @@ function AdminDashboard() {
           )}
           {section === 'details' && selected && (
             <section className="admin-panel">
-              <button className="admin-action admin-action--gold" onClick={() => setSection('list')}>Back to movies</button>
+              <div className="admin-detail-toolbar">
+                <button className="admin-action admin-action--gold" onClick={() => setSection('list')}>Back to movies</button>
+                <div className="admin-detail-toolbar__actions">
+                  <button className="admin-action admin-action--gold" onClick={() => setSection('edit')}>Edit details</button>
+                  <button className="admin-action admin-action--gold" onClick={() => navigate('/admin/screenings', { state: { movieId: selected.id, movieTitle: selected.title } })}>View screenings</button>
+                </div>
+              </div>
               <div className={`movie-detail${selected.poster_url ? '' : ' movie-detail--without-poster'}`}>
                 {selected.poster_url && <div className="movie-detail__poster"><img src={selected.poster_url} alt={`${selected.title} poster`} /></div>}
                 <div className="movie-detail__content">
                   <p className="movie-detail__eyebrow">{selected.coming_soon ? 'Coming soon' : 'Available'}</p>
                   <h1>{selected.title}</h1>
                   <div className="movie-detail__metadata"><span>{selected.genre}</span><span>{selected.rated ? `Age rating: ${selected.rated}` : ''}</span></div>
-                  <div className="admin-movies__actions">
-                    <button className="admin-action admin-action--gold" onClick={() => setSection('edit')}>Edit details</button>
-                    <button className="admin-action admin-action--gold" onClick={() => navigate('/admin/screenings', { state: { movieId: selected.id, movieTitle: selected.title } })}>View screenings</button>
-                  </div>
                   {selected.plot && <div className="movie-detail__section"><h2>About the movie</h2><p>{selected.plot}</p></div>}
                   {selected.actors && <div className="movie-detail__section"><h2>Cast</h2><p>{selected.actors}</p></div>}
                   {selected.director && <div className="movie-detail__section"><h2>Director</h2><p>{selected.director}</p></div>}

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { hasAvailableRegularSeat, regularSeats } from '../src/pages/screeningAvailability.js'
+import { hasAvailableRegularSeat, regularSeats, reservedRegularSeatCount } from '../src/pages/screeningAvailability.js'
 
 test('regular seat numbers exclude accessible spaces and skip seat 13', () => {
   const screening = { seatCapacity: 25, accessibleSeatCount: 10 }
@@ -13,4 +13,9 @@ test('screenings are available only when a regular seat is unreserved', () => {
   assert.equal(hasAvailableRegularSeat({ ...screening, takenSeats: [1, 2, 3] }), false)
   assert.equal(hasAvailableRegularSeat({ ...screening, takenSeats: [1, 2, 99] }), true)
   assert.equal(hasAvailableRegularSeat({ ...screening, seatCapacity: 10, takenSeats: [] }), false)
+})
+
+test('counts only distinct reservations matching regular seats', () => {
+  const screening = { seatCapacity: 15, accessibleSeatCount: 3, takenSeats: [1, 1, 12, 13, 99] }
+  assert.equal(reservedRegularSeatCount(screening), 2)
 })
