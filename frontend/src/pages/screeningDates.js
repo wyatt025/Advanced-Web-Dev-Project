@@ -13,6 +13,13 @@ export function formatScreeningDate(value) {
   return Number.isNaN(date.getTime()) ? String(value) : displayFormatter.format(date)
 }
 
+export function screeningDateParts(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return { date: String(value), time: 'Unavailable' }
+  const parts = Object.fromEntries(displayFormatter.formatToParts(date).map(({ type, value: part }) => [type, part]))
+  return { date: `${parts.day}/${parts.month}/${parts.year}`, time: `${parts.hour}:${parts.minute}` }
+}
+
 export function screeningLocalInput(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
