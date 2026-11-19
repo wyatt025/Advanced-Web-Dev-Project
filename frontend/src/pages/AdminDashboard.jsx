@@ -18,7 +18,9 @@ const metrics = [
 function ConfirmationDialog({ confirmation, onDismiss }) {
   const dialog = useRef(null)
   const [text, setText] = useState('')
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const isDelete = confirmation.kind === 'delete'
+  const isDeleteFinalStep = isDelete && deleteConfirmed
 
   useEffect(() => {
     dialog.current.showModal()
@@ -35,26 +37,32 @@ function ConfirmationDialog({ confirmation, onDismiss }) {
       }}
     >
       <h2 id="admin-confirmation-title">{confirmation.title}</h2>
-      {isDelete && (
-        <>
-          <p>Deleting this movie also permanently deletes its screenings and reservations. Type DELETE to confirm.</p>
+      {isDelete && !isDeleteFinalStep && (
+        <p>Deleting this movie also permanently deletes its screenings and reservations.</p>
+      )}
+      {isDeleteFinalStep && (
           <label className="admin-field">
-            Confirmation
+            Type DELETE to confirm.
             <input value={text} onChange={(event) => setText(event.target.value)} autoComplete="off" />
           </label>
-        </>
       )}
       <div className="admin-confirmation__actions">
         <button
           type="button"
           className="admin-action admin-action--green"
-          disabled={isDelete && text !== 'DELETE'}
+          disabled={isDeleteFinalStep && text !== 'DELETE'}
           onClick={() => {
+            if (isDelete && !isDeleteFinalStep) {
+              setDeleteConfirmed(true)
+              return
+            }
             onDismiss()
             confirmation.onConfirm()
           }}
-        >Yes</button>
-        <button type="button" className="admin-action admin-action--red" onClick={onDismiss}>No</button>
+        >{isDeleteFinalStep ? 'Confirm' : 'Yes'}</button>
+        <button type="button" className="admin-action admin-action--red" onClick={onDismiss}>
+          {isDeleteFinalStep ? 'Cancel' : 'No'}
+        </button>
       </div>
     </dialog>
   )
