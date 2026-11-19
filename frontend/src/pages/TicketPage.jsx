@@ -3,22 +3,10 @@ import { Link, useParams } from 'react-router-dom'
 import { getMovie } from '../api/moviesApi.js'
 import BuyTickets from './BuyTickets.jsx'
 import { hasAvailableRegularSeat, regularSeats } from './screeningAvailability.js'
+import { formatScreeningDate } from './screeningDates.js'
 import './TicketPage.css'
 
 const seatsPerRow = 10
-
-function formatScreeningDate(value) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return String(value)
-  return new Intl.DateTimeFormat(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'Europe/Helsinki',
-  }).format(date)
-}
 
 function leavesSeatGap(seats) {
   const positions = seats

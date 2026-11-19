@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { deleteMovie, getDashboardMetrics, getMovies } from '../api/adminApi'
 import AdminMovieForm from './AdminMovieForm.jsx'
+import AdminScreenings from './AdminScreenings.jsx'
 import './AdminDashboard.css'
 import './MoviePage.css'
 
@@ -18,7 +19,9 @@ const metrics = [
 function ConfirmationDialog({ confirmation, onDismiss }) {
   const dialog = useRef(null)
   const [text, setText] = useState('')
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const isDelete = confirmation.kind === 'delete'
+  const isDeleteFinalStep = isDelete && deleteConfirmed
 
   useEffect(() => {
     dialog.current.showModal()
@@ -35,34 +38,42 @@ function ConfirmationDialog({ confirmation, onDismiss }) {
       }}
     >
       <h2 id="admin-confirmation-title">{confirmation.title}</h2>
-      {isDelete && (
-        <>
-          <p>Deleting this movie also permanently deletes its screenings and reservations. Type DELETE to confirm.</p>
+      {(confirmation.message || (isDelete && !isDeleteFinalStep)) && !isDeleteFinalStep && (
+        <p>{confirmation.message || 'Deleting this movie also permanently deletes its screenings and reservations.'}</p>
+      )}
+      {isDeleteFinalStep && (
           <label className="admin-field">
-            Confirmation
+            Type DELETE to confirm.
             <input value={text} onChange={(event) => setText(event.target.value)} autoComplete="off" />
           </label>
-        </>
       )}
       <div className="admin-confirmation__actions">
         <button
           type="button"
           className="admin-action admin-action--green"
-          disabled={isDelete && text !== 'DELETE'}
+          disabled={isDeleteFinalStep && text !== 'DELETE'}
           onClick={() => {
+            if (isDelete && !isDeleteFinalStep) {
+              setDeleteConfirmed(true)
+              return
+            }
             onDismiss()
             confirmation.onConfirm()
           }}
-        >Yes</button>
-        <button type="button" className="admin-action admin-action--red" onClick={onDismiss}>No</button>
+        >{isDeleteFinalStep ? 'Confirm' : 'Yes'}</button>
+        <button type="button" className="admin-action admin-action--red" onClick={onDismiss}>
+          {isDeleteFinalStep ? 'Cancel' : 'No'}
+        </button>
       </div>
     </dialog>
   )
 }
 
 function AdminDashboard() {
-  const { pathname } = useLocation()
+  const { pathname, state: navigationState } = useLocation()
+  const navigate = useNavigate()
   const isMovies = pathname === '/admin/movies' || pathname === '/admin/movies/'
+  const isScreenings = pathname === '/admin/screenings' || pathname === '/admin/screenings/'
   const isDashboard = pathname === '/admin' || pathname === '/admin/'
   const [section, setSection] = useState('list')
   const [selected, setSelected] = useState(null)
@@ -79,10 +90,10 @@ function AdminDashboard() {
   const [rating, setRating] = useState('')
   const [year, setYear] = useState('')
   const [status, setStatus] = useState('')
+  const pendingMovieId = useRef(navigationState?.movieId)
 
   useEffect(() => {
     const controller = new AbortController()
-    let active = true
     async function load() {
       setLoading(true)
       setError('')
@@ -90,20 +101,27 @@ function AdminDashboard() {
         if (isMovies) {
           const result = await getMovies()
           if (!Array.isArray(result)) throw new Error('The server returned an invalid movie list.')
-          if (active) setMovies(result)
+          if (!controller.signal.aborted) {
+            setMovies(result)
+            if (pendingMovieId.current) {
+              const movie = result.find((item) => item.id === pendingMovieId.current)
+              if (movie) { setSelected(movie); setSection('details') }
+              else setError('The movie no longer exists.')
+              pendingMovieId.current = null
+            }
+          }
         } else if (isDashboard) {
           const result = await getDashboardMetrics(controller.signal)
-          if (active) setSummary(result)
+          if (!controller.signal.aborted) setSummary(result)
         }
       } catch (loadError) {
-        if (active) setError(loadError.message || 'Could not load admin data.')
+        if (!controller.signal.aborted) setError(loadError.message || 'Could not load admin data.')
       } finally {
-        if (active) setLoading(false)
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
     load()
     return () => {
-      active = false
       controller.abort()
     }
   }, [isMovies, isDashboard, revision])
@@ -236,9 +254,8 @@ function AdminDashboard() {
                   <div className="movie-detail__metadata"><span>{selected.genre}</span><span>{selected.rated ? `Age rating: ${selected.rated}` : ''}</span></div>
                   <div className="admin-movies__actions">
                     <button className="admin-action admin-action--gold" onClick={() => setSection('edit')}>Edit details</button>
-                    <button className="admin-action admin-action--gold" disabled title="Screening management is coming later">View screenings</button>
+                    <button className="admin-action admin-action--gold" onClick={() => navigate('/admin/screenings', { state: { movieId: selected.id, movieTitle: selected.title } })}>View screenings</button>
                   </div>
-                  <p>Screening management is coming later.</p>
                   {selected.plot && <div className="movie-detail__section"><h2>About the movie</h2><p>{selected.plot}</p></div>}
                   {selected.actors && <div className="movie-detail__section"><h2>Cast</h2><p>{selected.actors}</p></div>}
                   {selected.director && <div className="movie-detail__section"><h2>Director</h2><p>{selected.director}</p></div>}
@@ -248,7 +265,8 @@ function AdminDashboard() {
           )}
         </>
       )}
-      {!isDashboard && !isMovies && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
+      {isScreenings && <AdminScreenings requestConfirmation={setConfirmation} />}
+      {!isDashboard && !isMovies && !isScreenings && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
       {confirmation && <ConfirmationDialog confirmation={confirmation} onDismiss={() => setConfirmation(null)} />}
     </main>
   )
