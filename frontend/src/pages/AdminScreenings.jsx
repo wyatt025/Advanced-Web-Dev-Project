@@ -126,6 +126,9 @@ function ScreeningForm({ screening, movies, auditoriums, requestConfirmation, on
             <legend>Theaters ({isEditing ? 'select one' : 'select one or more'})</legend>
             <div className="admin-screening-form__choice-list">
               {availableAuditoriums.length === 0 && <span>Select a cinema first.</span>}
+              {!isEditing && <label><input type="checkbox" disabled={availableAuditoriums.length === 0} checked={availableAuditoriums.length > 0 && availableAuditoriums.every((auditorium) => auditoriumIds.includes(String(auditorium.id)))} onChange={(event) => {
+                setAuditoriumIds(event.target.checked ? availableAuditoriums.map((auditorium) => String(auditorium.id)) : [])
+              }} /> All theaters</label>}
               {availableAuditoriums.map((auditorium) => {
                 const id = String(auditorium.id)
                 return <label key={id}><input type="checkbox" checked={auditoriumIds.includes(id)} onChange={(event) => {
@@ -163,7 +166,7 @@ function ScreeningForm({ screening, movies, auditoriums, requestConfirmation, on
         })}
       </ul>
       <div className="admin-screening-form__actions">
-        <button type="button" className="admin-action admin-action--green" disabled={!queue.length || editingIndex !== null || busy} onClick={save}>Confirm all</button>
+        <button type="button" className="admin-action admin-action--green" disabled={!queue.length || editingIndex !== null || busy} onClick={save}>Confirm</button>
         <button type="button" className="admin-action admin-action--gold" disabled={busy} onClick={onCancel}>Cancel</button>
         {isEditing && <button type="button" className="admin-action admin-action--red" disabled={busy} onClick={() => onDelete(screening)}>Delete</button>}
       </div>
@@ -200,29 +203,28 @@ function ScreeningDetails({ screening, onBack, onEdit, onMovie }) {
           <p><strong>Handicap Spots:</strong> <span className="admin-screening-count-unavailable" tabIndex={0} aria-label="Accessible reservation count unavailable"><span className="admin-screening-count-tooltip" aria-hidden="true">Accessible reservation count is unavailable</span></span> / {screening.accessibleSeatCount}</p>
         </div>
         <p className="admin-screening-count-note">Counts and seat markings include database reservations only. Payment bookings may not be included.</p>
+        <section className="admin-screening-layout" aria-label="Screening seating layout">
+          <div className="ticket-seat-map">
+            {rows.map((position) => {
+              const row = position >= 13 ? position + 1 : position
+              return <div className={`ticket-seat-row${position % 2 ? ' is-reversed' : ''}`} key={row}>
+                <span className="ticket-seat-row__label">{row}</span>
+                {seats.slice((position - 1) * 10, position * 10).map((seat) => <span role="img" key={seat} className={`ticket-seat admin-screening-seat${taken.has(seat) ? ' is-reserved' : ''}`} aria-label={`Row ${row}, seat ${seat}${taken.has(seat) ? ', reserved' : ', available'}`}>{seat}</span>)}
+                <span className="ticket-seat-row__label">{row}</span>
+              </div>
+            })}
+          </div>
+          <div className="ticket-wheelchair-row">
+            <div className="ticket-wheelchair-slots" role="img" aria-label={`${screening.accessibleSeatCount} wheelchair spaces, booking not available`}>
+              {Array.from({ length: screening.accessibleSeatCount }, (_, index) => <span className="ticket-wheelchair-slot" key={index}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="4" r="2" /><path d="m9 8-2 6h6l2 4h4m-9-10 5 2 2 5h3" /><path d="M13 16a6 6 0 1 1-5-7" /></svg>
+              </span>)}
+            </div>
+          </div>
+          <div className="ticket-legend"><span><i className="ticket-legend__seat" /> Available</span><span><i className="ticket-legend__seat is-reserved" /> Reserved</span></div>
+        </section>
       </div>
     </div>
-    <section className="ticket-panel admin-screening-layout" aria-label="Screening seating layout">
-      <h2>Seating layout</h2>
-      <div className="ticket-seat-map">
-        {rows.map((position) => {
-          const row = position >= 13 ? position + 1 : position
-          return <div className={`ticket-seat-row${position % 2 ? ' is-reversed' : ''}`} key={row}>
-            <span className="ticket-seat-row__label">{row}</span>
-            {seats.slice((position - 1) * 10, position * 10).map((seat) => <span role="img" key={seat} className={`ticket-seat admin-screening-seat${taken.has(seat) ? ' is-reserved' : ''}`} aria-label={`Row ${row}, seat ${seat}${taken.has(seat) ? ', reserved' : ', available'}`}>{seat}</span>)}
-            <span className="ticket-seat-row__label">{row}</span>
-          </div>
-        })}
-      </div>
-      <div className="ticket-wheelchair-row">
-        <div className="ticket-wheelchair-slots" role="img" aria-label={`${screening.accessibleSeatCount} wheelchair spaces, booking not available`}>
-          {Array.from({ length: screening.accessibleSeatCount }, (_, index) => <span className="ticket-wheelchair-slot" key={index}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="4" r="2" /><path d="m9 8-2 6h6l2 4h4m-9-10 5 2 2 5h3" /><path d="M13 16a6 6 0 1 1-5-7" /></svg>
-          </span>)}
-        </div>
-      </div>
-      <div className="ticket-legend"><span><i className="ticket-legend__seat" /> Available</span><span><i className="ticket-legend__seat is-reserved" /> Reserved</span></div>
-    </section>
   </section>
 }
 

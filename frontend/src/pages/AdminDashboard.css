@@ -109,8 +109,8 @@
 .admin-movies__details strong { color: var(--text-h); }
 .admin-movies__details span { color: #a99f8d; font-size: 13px; }
 .admin-screening-list-details strong { color: var(--gold); }
-.admin-screening-list-metadata { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.admin-screening-list-metadata span { overflow-wrap: anywhere; }
+.admin-screening-list-metadata { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: min(100%, 360px); margin-left: auto; }
+.admin-screening-list-metadata span { color: #fff; font-weight: 700; overflow-wrap: anywhere; }
 .admin-movies__actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .admin-detail-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .admin-detail-toolbar__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-left: auto; }
@@ -132,6 +132,7 @@
 .admin-screening-count-tooltip { display: none; position: absolute; z-index: 1; bottom: calc(100% + 6px); left: 0; width: 180px; padding: 8px; border: 1px solid #41382e; border-radius: 6px; background: #12110f; color: #dfd6c7; font-size: 12px; font-weight: 400; }
 .admin-screening-count-unavailable:hover .admin-screening-count-tooltip, .admin-screening-count-unavailable:focus .admin-screening-count-tooltip { display: block; }
 .admin-screening-count-note { color: #8d8373; font-size: 12px; font-weight: 400; }
+.admin-screening-layout { max-width: 100%; margin-top: 20px; overflow-x: auto; }
 .admin-screening-layout .ticket-seat-map { gap: 3px; }
 .admin-screening-layout .ticket-seat-row { grid-template-columns: 16px repeat(10, 20px) 16px; gap: 3px; }
 .admin-screening-layout .ticket-seat { font-size: 8px; border-radius: 4px; }
