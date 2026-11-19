@@ -108,8 +108,21 @@ const adminModel = {
 
 //----- Movie Management -----------
     getAllMovies: async () => {
-        const [rows] = await pools.admin.execute('SELECT * FROM movies');
+        const [rows] = await pools.admin.execute('SELECT * FROM movies ORDER BY id DESC');
         return rows;
+    },
+    getDashboardMetrics: async () => {
+        const [rows] = await pools.admin.execute(
+            `SELECT
+                (SELECT COUNT(*) FROM movies) AS movies,
+                (SELECT COUNT(*) FROM screenings) AS screenings,
+                (SELECT COUNT(*) FROM screenings WHERE date >= UTC_TIMESTAMP()) AS upcomingScreenings,
+                (SELECT COUNT(*) FROM reservations) AS reservations,
+                (SELECT COUNT(*) FROM cinemas) AS cinemas,
+                (SELECT COUNT(*) FROM users WHERE role = 'user') AS users,
+                (SELECT COUNT(*) FROM users WHERE role = 'employee') AS employees`
+        );
+        return rows[0];
     },
     getMovieById,
     createMovieWithScreenings: async (movie, screenings) => {
@@ -186,15 +199,68 @@ const adminModel = {
         return getMovieById(result.insertId);
     },
     updateMovie: async (id, movie) => {
-        const fields = movieFields.filter(field => movie[field] !== undefined);
-        if (fields.length === 0) {
-            return getMovieById(id);
+        const connection = await pools.admin.getConnection();
+        let transactionStarted = false;
+        try {
+            await connection.beginTransaction();
+            transactionStarted = true;
+            const [screenings] = await connection.execute(
+                'SELECT id, auditorium_id, date FROM screenings WHERE movie_id = ? ORDER BY auditorium_id, id',
+                [id]
+            );
+            for (const auditoriumId of [...new Set(screenings.map((item) => item.auditorium_id))]) {
+                await connection.execute('SELECT id FROM auditoriums WHERE id = ? FOR UPDATE', [auditoriumId]);
+            }
+            const [current] = await connection.execute('SELECT * FROM movies WHERE id = ? FOR UPDATE', [id]);
+            if (!current.length) {
+                await connection.commit();
+                transactionStarted = false;
+                return undefined;
+            }
+            if (movie.coming_soon !== Boolean(current[0].coming_soon)) {
+                throw new MovieValidationError('Coming soon status cannot be changed here; manage screenings first');
+            }
+            if (movie.runtime_minutes !== current[0].runtime_minutes) {
+                for (const screening of screenings) {
+                    const [conflicts] = await connection.execute(
+                        `SELECT s.id FROM screenings s
+                         JOIN movies m ON m.id = s.movie_id
+                         WHERE s.auditorium_id = ? AND s.id <> ?
+                           AND s.date < DATE_ADD(?, INTERVAL ? MINUTE)
+                           AND (m.runtime_minutes IS NULL OR m.runtime_minutes <= 0
+                             OR DATE_ADD(s.date, INTERVAL
+                               ((CASE WHEN s.movie_id = ? THEN ? ELSE m.runtime_minutes END) + 60) MINUTE) > ?)
+                         LIMIT 1 FOR UPDATE`,
+                        [screening.auditorium_id, screening.id, screening.date, movie.runtime_minutes + 60, id, movie.runtime_minutes, screening.date]
+                    );
+                    if (conflicts.length) {
+                        const error = new Error('The new runtime conflicts with another screening in the same auditorium');
+                        error.code = 'SCREENING_CONFLICT';
+                        throw error;
+                    }
+                }
+            }
+            const fields = movieFields.filter((field) => field !== 'coming_soon' && movie[field] !== undefined);
+            await connection.execute(
+                `UPDATE movies SET ${fields.map((field) => `${field} = ?`).join(', ')} WHERE id = ?`,
+                [...fields.map((field) => movie[field]), id]
+            );
+            const [updated] = await connection.execute('SELECT * FROM movies WHERE id = ?', [id]);
+            await connection.commit();
+            transactionStarted = false;
+            return updated[0];
+        } catch (err) {
+            if (transactionStarted) {
+                try {
+                    await connection.rollback();
+                } catch (rollbackError) {
+                    console.error('Movie update rollback failed:', rollbackError.code || 'UNKNOWN_ERROR');
+                }
+            }
+            throw err;
+        } finally {
+            connection.release();
         }
-        const [result] = await pools.admin.execute(
-            `UPDATE movies SET ${fields.map(field => `${field} = ?`).join(', ')} WHERE id = ?`,
-            [...fields.map(field => movie[field]), id]
-        );
-        return result.affectedRows ? getMovieById(id) : undefined;
     },
     deleteMovie: async (id) => {
         const [result] = await pools.admin.execute('DELETE FROM movies WHERE id = ?', [id]);

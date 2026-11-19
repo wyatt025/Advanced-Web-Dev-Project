@@ -1,7 +1,8 @@
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import AdminDashboard from '../pages/AdminDashboard.jsx'
 
 function AdminRoute({ session, sessionLoading, sessionError }) {
+  const location = useLocation()
   if (sessionLoading) {
     return <div className="about-page" role="status">Checking your session...</div>
   }
@@ -29,7 +30,7 @@ function AdminRoute({ session, sessionLoading, sessionError }) {
     )
   }
 
-  return <AdminDashboard />
+  return <AdminDashboard key={location.key} />
 }
 
 export default AdminRoute

@@ -1,702 +1,255 @@
 import { useEffect, useRef, useState } from 'react'
-import {
-  searchExternalMovieDatabase,
-  addMovieManually,
-  getExternalMovieDetails,
-  getOpenAuditoriums,
-} from '../api/adminApi'
+import { useLocation } from 'react-router-dom'
+import { deleteMovie, getDashboardMetrics, getMovies } from '../api/adminApi'
+import AdminMovieForm from './AdminMovieForm.jsx'
 import './AdminDashboard.css'
+import './MoviePage.css'
 
-const reservations = [
-  {
-    id: 'OULU-1',
-    customer: 'Olivia Martin',
-    email: 'olivia.martin@example.com',
-    movie: 'example movie',
-    showtime: 'Today · 6:30 PM',
-    seats: 'F4, F5',
-    total: '20€',
-    status: 'Confirmed',
-  },
-  {
-    id: 'TAMPERE-1',
-    customer: 'Noah Williams',
-    email: 'noah.williams@example.com',
-    movie: 'example movie',
-    showtime: 'Today · 10 PM',
-    seats: 'C7',
-    total: '10€',
-    status: 'Confirmed',
-  },
+const metrics = [
+  ['movies', 'Total movies'],
+  ['screenings', 'Total screenings'],
+  ['upcomingScreenings', 'Upcoming screenings'],
+  ['reservations', 'Total reservations'],
+  ['cinemas', 'Total cinemas'],
+  ['users', 'Total users'],
+  ['employees', 'Total employees'],
 ]
-const emptyMovie = {
-  imdb_id: '',
-  title: '',
-  release_year: '',
-  rated: '',
-  released_date: '',
-  runtime_minutes: '',
-  genre: '',
-  director: '',
-  writer: '',
-  actors: '',
-  plot: '',
-  languages: '',
-  poster_url: '',
-  rating_imdb: '',
-  rating_rotten_tomatoes: '',
-  rating_metacritic: '',
+
+function ConfirmationDialog({ confirmation, onDismiss }) {
+  const dialog = useRef(null)
+  const [text, setText] = useState('')
+  const isDelete = confirmation.kind === 'delete'
+
+  useEffect(() => {
+    dialog.current.showModal()
+  }, [])
+
+  return (
+    <dialog
+      ref={dialog}
+      className="admin-confirmation"
+      aria-labelledby="admin-confirmation-title"
+      onCancel={(event) => {
+        event.preventDefault()
+        onDismiss()
+      }}
+    >
+      <h2 id="admin-confirmation-title">{confirmation.title}</h2>
+      {isDelete && (
+        <>
+          <p>Deleting this movie also permanently deletes its screenings and reservations. Type DELETE to confirm.</p>
+          <label className="admin-field">
+            Confirmation
+            <input value={text} onChange={(event) => setText(event.target.value)} autoComplete="off" />
+          </label>
+        </>
+      )}
+      <div className="admin-confirmation__actions">
+        <button
+          type="button"
+          className="admin-action admin-action--green"
+          disabled={isDelete && text !== 'DELETE'}
+          onClick={() => {
+            onDismiss()
+            confirmation.onConfirm()
+          }}
+        >Yes</button>
+        <button type="button" className="admin-action admin-action--red" onClick={onDismiss}>No</button>
+      </div>
+    </dialog>
+  )
 }
 
 function AdminDashboard() {
-  const [ticketPrice, setTicketPrice] = useState('')
-  const [searchTitle, setSearchTitle] = useState('')
-  const [searchResults, setSearchResults] = useState([])
-  const [selectedMovie, setSelectedMovie] = useState(null)
-  const [movieStatus, setMovieStatus] = useState('')
-  const [isSearching, setIsSearching] = useState(false)
-  const [isAdding, setIsAdding] = useState(false)
-  const [movieForm, setMovieForm] = useState(emptyMovie)
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
-  const [imdbLookup, setImdbLookup] = useState('')
-  const [formOpen, setFormOpen] = useState(false)
-  const [searchPage, setSearchPage] = useState(1)
-  const [totalResults, setTotalResults] = useState(0)
-  const [searchedTitle, setSearchedTitle] = useState('')
-  const [comingSoon, setComingSoon] = useState(false)
-  const [screenings, setScreenings] = useState([{ auditoriumId: '', localStart: '' }])
-  const [auditoriums, setAuditoriums] = useState([])
-  const [auditoriumError, setAuditoriumError] = useState('')
-  const [isLoadingAuditoriums, setIsLoadingAuditoriums] = useState(true)
-  const [auditoriumRequest, setAuditoriumRequest] = useState(0)
-  const moviePickerRef = useRef(null)
+  const { pathname } = useLocation()
+  const isMovies = pathname === '/admin/movies' || pathname === '/admin/movies/'
+  const isDashboard = pathname === '/admin' || pathname === '/admin/'
+  const [section, setSection] = useState('list')
+  const [selected, setSelected] = useState(null)
+  const [movies, setMovies] = useState([])
+  const [summary, setSummary] = useState(null)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [revision, setRevision] = useState(0)
+  const [confirmation, setConfirmation] = useState(null)
+  const [query, setQuery] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [genre, setGenre] = useState('')
+  const [rating, setRating] = useState('')
+  const [year, setYear] = useState('')
+  const [status, setStatus] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
-
-    getOpenAuditoriums(controller.signal)
-      .then((items) => {
-        setAuditoriums(items)
-        setAuditoriumError('')
-      })
-      .catch((error) => {
-        if (!controller.signal.aborted) {
-          setAuditoriumError(error.message || 'Could not load auditoriums.')
+    let active = true
+    async function load() {
+      setLoading(true)
+      setError('')
+      try {
+        if (isMovies) {
+          const result = await getMovies()
+          if (!Array.isArray(result)) throw new Error('The server returned an invalid movie list.')
+          if (active) setMovies(result)
+        } else if (isDashboard) {
+          const result = await getDashboardMetrics(controller.signal)
+          if (active) setSummary(result)
         }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoadingAuditoriums(false)
-      })
+      } catch (loadError) {
+        if (active) setError(loadError.message || 'Could not load admin data.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [isMovies, isDashboard, revision])
 
-    return () => controller.abort()
-  }, [auditoriumRequest])
-
-  function handleMovieFieldChange(e) {
-    const { name, value } = e.target
-    setMovieForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }))
+  function requestDelete(movie) {
+    setConfirmation({
+      kind: 'delete',
+      title: `Delete ${movie.title}?`,
+      onConfirm: async () => {
+        setError('')
+        try {
+          await deleteMovie(movie.id)
+          setNotice(`Deleted ${movie.title}.`)
+          setSelected(null)
+          setSection('list')
+          setRevision((value) => value + 1)
+        } catch (deleteError) {
+          setError(deleteError.message || 'Could not delete the movie.')
+        }
+      },
+    })
   }
 
-  async function loadMovieDetails(imdbID, movie) {
-    if (Object.values(movieForm).some((value) => value !== '') &&
-        !window.confirm('Loading another movie will replace the current movie details. Continue?')) {
-      return
-    }
-    setMovieStatus('')
-    setIsLoadingDetails(true)
-
-    try {
-      const details = await getExternalMovieDetails(imdbID)
-      if (!details || typeof details.title !== 'string' || !details.title.trim() ||
-          typeof details.imdb_id !== 'string' || details.imdb_id !== imdbID) {
-        throw new Error('The movie service returned unexpected details.')
-      }
-
-      const formValues = Object.fromEntries(
-        Object.keys(emptyMovie).map((field) => [
-          field,
-          details[field] == null ? '' : String(details[field]),
-        ])
-      )
-
-      setMovieForm(formValues)
-      setSelectedMovie(movie || {
-        imdbID: details.imdb_id,
-        Title: details.title,
-      })
-      if (moviePickerRef.current) {
-        moviePickerRef.current.open = false
-      }
-      setFormOpen(true)
-      setMovieStatus(`Loaded ${details.title}. Review the movie fields below.`)
-    } catch (error) {
-      setMovieStatus(error.message || 'Could not load movie details.')
-    } finally {
-      setIsLoadingDetails(false)
-    }
-  }
-
-  async function handleSearch(page = 1) {
-    const title = searchTitle.trim()
-    if (!title) {
-      setMovieStatus('Enter a movie title to search.')
-      return
-    }
-    setMovieStatus('')
-    setSearchResults([])
-    setIsSearching(true)
-
-    try {
-      const data = await searchExternalMovieDatabase(title, page)
-
-      if (!Array.isArray(data.Search)) {
-        throw new Error('The movie service returned an unexpected response.')
-      }
-
-      setSearchResults(data.Search)
-      setSearchPage(page)
-      setSearchedTitle(title)
-      setTotalResults(Number(data.totalResults) || 0)
-
-      if (data.Search.length === 0) {
-        setMovieStatus('No movies found.')
-      }
-    } catch (error) {
-      setMovieStatus(error.message || 'Could not search for movies.')
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
-  function handleImdbLookup() {
-    const imdbID = imdbLookup.trim()
-    if (!imdbID) {
-      setMovieStatus('Enter an IMDb ID to look up.')
-      return
-    }
-    loadMovieDetails(imdbID)
-  }
-
-  async function handleAddMovie(event) {
-    event.preventDefault()
-    if (isAdding || isSearching || isLoadingDetails) return
-    if (!movieForm.title.trim()) {
-      setMovieStatus('Enter a movie title.')
-      return
-    }
-
-    const runtime = Number(movieForm.runtime_minutes)
-    if (!Number.isSafeInteger(runtime) || runtime < 1 || runtime > 9999999) {
-      setMovieStatus('Enter a valid runtime in minutes (1-9999999).')
-      return
-    }
-    if (!comingSoon) {
-      if (isLoadingAuditoriums || auditoriumError || auditoriums.length === 0) {
-        setMovieStatus('Open auditoriums must be available before scheduling a screening.')
-        return
-      }
-      if (screenings.some((screening) =>
-          !Number.isSafeInteger(Number(screening.auditoriumId)) ||
-          Number(screening.auditoriumId) < 1 || !screening.localStart
-        )) {
-        setMovieStatus('Choose an auditorium and date and time for each screening.')
-        return
-      }
-    }
-
-
-    // Accept up to six digits before the decimal and up to two after it.
-    const priceFormat = /^\d{1,6}(\.\d{1,2})?$/
-
-    if (!priceFormat.test(ticketPrice) || Number(ticketPrice) <= 0) {
-      setMovieStatus('Enter a valid ticket price greater than zero.')
-      return
-    }
-
-    setMovieStatus('')
-    setIsAdding(true)
-
-    try {
-      const savedMovie = await addMovieManually({
-        ...movieForm,
-        price: ticketPrice,
-        coming_soon: comingSoon,
-        screenings: comingSoon ? [] : screenings.map((screening) => ({
-          auditoriumId: Number(screening.auditoriumId),
-          localStart: screening.localStart
-        }))
-      })
-
-      setMovieStatus(`Added ${savedMovie.title} successfully.`)
-      setMovieForm(emptyMovie)
-      setSelectedMovie(null)
-      setSearchResults([])
-      setTotalResults(0)
-      setSearchedTitle('')
-      setSearchPage(1)
-      setSearchTitle('')
-      setImdbLookup('')
-      setTicketPrice('')
-      setComingSoon(false)
-      setScreenings([{ auditoriumId: '', localStart: '' }])
-    } catch (error) {
-      setMovieStatus(error.message || 'Could not add the movie.')
-    } finally {
-      setIsAdding(false)
-    }
-  }
+  const searchableFields = [
+    'title', 'imdb_id', 'release_year', 'rated', 'released_date', 'runtime_minutes',
+    'genre', 'director', 'writer', 'actors', 'plot', 'languages', 'poster_url',
+    'rating_imdb', 'rating_rotten_tomatoes', 'rating_metacritic', 'price',
+  ]
+  const filteredMovies = movies.filter((movie) => {
+    const search = query.trim().toLocaleLowerCase()
+    return (!search || searchableFields.some((field) => String(movie[field] ?? '').toLocaleLowerCase().includes(search)))
+      && (!genre || String(movie.genre ?? '').toLocaleLowerCase().includes(genre.toLocaleLowerCase()))
+      && (!rating || movie.rated === rating)
+      && (!year || String(movie.release_year ?? '') === year)
+      && (!status || (status === 'coming' ? Boolean(movie.coming_soon) : !movie.coming_soon))
+  })
+  const ratings = [...new Set(movies.map((movie) => movie.rated).filter(Boolean))].sort()
 
   return (
     <main className="admin-dashboard">
-      <header className="admin-dashboard__heading">
-        <div>
-          <h1>Admin Dashboard</h1>
-        </div>
-      </header>
-
-      <section className="admin-panel" aria-labelledby="movie-form-title">
-        <div className="admin-panel__heading">
-          <div>
-            <h2 id="movie-form-title">Add a movie</h2>
-          </div>
-        </div>
-
-        <form className="admin-movie-form" onSubmit={handleAddMovie} noValidate>
-          <div className="admin-movie-picker">
-            <details className="admin-movie-dropdown" ref={moviePickerRef}>
-              <summary className="admin-field">
-                Movie
-                <span className="admin-movie-dropdown__trigger">
-                  {selectedMovie ? selectedMovie.Title : 'Choose a movie from the catalog'}
-                </span>
-              </summary>
-              <div className="admin-movie-dropdown__content">
+      {error && <p className="admin-feedback" role="alert">{error}</p>}
+      {notice && <p className="admin-feedback" role="status">{notice}</p>}
+      {isDashboard && (
+        <>
+          <header className="admin-dashboard__heading"><h1>Admin Dashboard</h1></header>
+          {loading && <p role="status">Loading dashboard metrics...</p>}
+          {!loading && summary && !error && (
+            <section className="admin-metrics" aria-label="Dashboard metrics">
+              {metrics.map(([key, label]) => (
+                <article className="admin-metric" key={key}>
+                  <h2>{label}</h2>
+                  <p>{summary[key]}</p>
+                </article>
+              ))}
+            </section>
+          )}
+          {!loading && error && <button className="admin-action admin-action--gold" onClick={() => setRevision((value) => value + 1)}>Retry</button>}
+        </>
+      )}
+      {isMovies && (
+        <>
+          {section === 'list' && (
+            <section className="admin-panel admin-movies" aria-labelledby="admin-movies-title">
+              <h1 id="admin-movies-title">Movies</h1>
+              <div className="admin-movies__toolbar">
                 <label className="admin-field">
-                  Search movies
-                  <input
-                    type="search"
-                    name="movie-search"
-                    placeholder="Search the movie catalog..."
-                    value={searchTitle}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        if (!isSearching && !isLoadingDetails && !isAdding) handleSearch()
-                      }
-                    }}
-                    onChange={(e) => {
-                      setSearchTitle(e.target.value)
-                      setSearchResults([])
-                      setTotalResults(0)
-                      setSearchedTitle('')
-                      setMovieStatus('')
-                    }}
-                    disabled={isSearching || isLoadingDetails || isAdding}
-                  />
+                  <span className="admin-visually-hidden">Search movie details</span>
+                  <input type="search" placeholder="Movie name, IMDb ID or details..." value={query} onChange={(event) => setQuery(event.target.value)} />
                 </label>
-                <button type="button" onClick={() => handleSearch()} disabled={isSearching || isLoadingDetails || isAdding}>
-                  {isSearching ? 'Searching...' : 'Search'}
-                </button>
-
-                <label className="admin-field">
-                  Look up by IMDb ID
-                  <input
-                    type="text"
-                    placeholder="e.g. tt0133093"
-                    value={imdbLookup}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        if (!isSearching && !isLoadingDetails && !isAdding) handleImdbLookup()
-                      }
-                    }}
-                    onChange={(event) => setImdbLookup(event.target.value)}
-                    disabled={isSearching || isLoadingDetails || isAdding}
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={handleImdbLookup}
-                  disabled={isSearching || isLoadingDetails || isAdding}
-                >
-                  {isLoadingDetails ? 'Loading details...' : 'Look up ID'}
-                </button>
-
-                {searchResults.length > 0 && (
-                  <>
-                  <ul>
-                    {searchResults.map((movie) => (
-                      <li key={movie.imdbID}>
-                        <button
-                          type="button"
-                          onClick={() => loadMovieDetails(movie.imdbID, movie)}
-                          disabled={isLoadingDetails || isSearching || isAdding}
-                          aria-pressed={selectedMovie?.imdbID === movie.imdbID}
-                        >
-                          {movie.Title} ({movie.Year})
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                  <div>
-                    <button type="button" onClick={() => handleSearch(searchPage - 1)} disabled={searchPage <= 1 || isSearching || isLoadingDetails || isAdding}>
-                      Previous
-                    </button>
-                    <span> Page {searchPage} </span>
-                    <button type="button" onClick={() => handleSearch(searchPage + 1)} disabled={searchPage >= 100 || searchPage * 10 >= totalResults || searchedTitle !== searchTitle.trim() || isSearching || isLoadingDetails || isAdding}>
-                      Next
-                    </button>
-                  </div>
-                  </>
-                )}
+                <button className="admin-action admin-action--neutral" type="button" aria-expanded={showFilters} onClick={() => setShowFilters(!showFilters)}>Filters</button>
+                <button className="admin-action admin-action--green" type="button" onClick={() => { setNotice(''); setSection('add') }}>Add movie</button>
               </div>
-            </details>
-          </div>
-
-          <p role="status" aria-live="polite">{movieStatus}</p>
-
-          <details className="admin-manual-movie" open={formOpen} onToggle={(event) => setFormOpen(event.currentTarget.open)}>
-            <summary>Review or enter movie details</summary>
-            <fieldset className="admin-manual-movie__fields" disabled={isLoadingDetails || isAdding}>
-              <label className="admin-field">
-                Movie title
-                <input type="text" name="title" placeholder="Movie title"
-                  value={movieForm.title}
-                onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                IMDb ID
-                <input
-                  type="text"
-                  name="imdb_id"
-                  placeholder="e.g. tt0133093"
-                  value={movieForm.imdb_id}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Release year
-                <input
-                  type="number"
-                  name="release_year"
-                  placeholder="e.g. 1999"
-                  value={movieForm.release_year}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Release date
-                <input
-                  type="date"
-                  name="released_date"
-                  value={movieForm.released_date}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Director
-                <input
-                  type="text"
-                  name="director"
-                  value={movieForm.director}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Age rating
-                <input
-                  type="text"
-                  name="rated"
-                  maxLength={20}
-                  placeholder="e.g. PG-13"
-                  value={movieForm.rated}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Actors
-                <input
-                  type="text"
-                  name="actors"
-                  placeholder="Separate actor names with commas"
-                  value={movieForm.actors}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Genre
-                <input type="text" name="genre" placeholder="e.g. Drama" value={movieForm.genre} onChange={handleMovieFieldChange} />
-              </label>
-              <label className="admin-field">
-                Runtime (minutes)
-                <input
-                  type="number"
-                  name="runtime_minutes"
-                  min="1"
-                  placeholder="120"
-                  value={movieForm.runtime_minutes}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field admin-manual-movie__synopsis">
-                Description
-                <textarea
-                  name="plot"
-                  rows="3"
-                  placeholder="Short movie synopsis"
-                  value={movieForm.plot}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Writer
-                <input
-                  type="text"
-                  name="writer"
-                  value={movieForm.writer}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Languages
-                <input
-                  type="text"
-                  name="languages"
-                  value={movieForm.languages}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Poster URL
-                <input
-                  type="url"
-                  name="poster_url"
-                  value={movieForm.poster_url}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                IMDb rating
-                <input
-                  type="text"
-                  name="rating_imdb"
-                  value={movieForm.rating_imdb}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Rotten Tomatoes rating
-                <input
-                  type="text"
-                  name="rating_rotten_tomatoes"
-                  value={movieForm.rating_rotten_tomatoes}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-              <label className="admin-field">
-                Metacritic rating
-                <input
-                  type="text"
-                  name="rating_metacritic"
-                  value={movieForm.rating_metacritic}
-                  onChange={handleMovieFieldChange}
-                />
-              </label>
-            </fieldset>
-          </details>
-
-          <div className="admin-form-divider" />
-
-          <div className="admin-section-heading">
-            <div>
-              <h3>Screenings</h3>
-              <p>Times are entered in Finnish local time.</p>
-            </div>
-          </div>
-
-          <label className="admin-field">
-            <span className="admin-coming-soon">
-              <input
-                type="checkbox"
-                checked={comingSoon}
-                onChange={(event) => setComingSoon(event.target.checked)}
-                disabled={isAdding}
-              />{' '}
-              Coming soon (no screenings yet)
-            </span>
-          </label>
-
-          {!comingSoon && (
-            <div className="admin-showtimes">
-              {isLoadingAuditoriums && <p role="status">Loading auditoriums...</p>}
-              {auditoriumError && (
-                <div role="alert">
-                  <p>{auditoriumError}</p>
-                  <button type="button" onClick={() => {
-                    setAuditoriumError('')
-                    setIsLoadingAuditoriums(true)
-                    setAuditoriumRequest((request) => request + 1)
-                  }}>
-                    Retry
-                  </button>
+              {showFilters && (
+                <div className="admin-movies__filters">
+                  <label className="admin-field">Genre<input value={genre} onChange={(event) => setGenre(event.target.value)} /></label>
+                  <label className="admin-field">Release year<input type="number" value={year} onChange={(event) => setYear(event.target.value)} /></label>
+                  <label className="admin-field">Age rating<select value={rating} onChange={(event) => setRating(event.target.value)}><option value="">All ratings</option>{ratings.map((item) => <option key={item}>{item}</option>)}</select></label>
+                  <label className="admin-field">Status<select value={status} onChange={(event) => setStatus(event.target.value)}><option value="">All statuses</option><option value="coming">Coming soon</option><option value="available">Not coming soon</option></select></label>
                 </div>
               )}
-              {!isLoadingAuditoriums && !auditoriumError && auditoriums.length === 0 && (
-                <p>No open auditoriums are available.</p>
+              {loading ? <p role="status">Loading movies...</p> : error ? (
+                <button className="admin-action admin-action--gold" onClick={() => setRevision((value) => value + 1)}>Retry</button>
+              ) : filteredMovies.length === 0 ? <p>No movies match your search.</p> : (
+                <ul className="admin-movies__list">
+                  {filteredMovies.map((movie) => (
+                    <li className="admin-movies__row" key={movie.id}>
+                      {movie.poster_url ? <img src={movie.poster_url} alt="" /> : <div className="admin-movies__poster-placeholder" aria-hidden="true" />}
+                      <div className="admin-movies__details">
+                        <strong>{movie.title}</strong>
+                        <span>{movie.genre || 'Genre not specified'}</span>
+                        <span>Rating: {movie.rated || 'Not specified'}</span>
+                      </div>
+                      <div className="admin-movies__actions">
+                        <button className="admin-action admin-action--gold" onClick={() => { setSelected(movie); setSection('details'); setNotice('') }}>Details</button>
+                        <button className="admin-action admin-action--red" onClick={() => requestDelete(movie)}>Delete</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
-              {screenings.map((screening, index) => (
-                <fieldset key={index} disabled={isAdding || isLoadingAuditoriums || Boolean(auditoriumError)}>
-                  <legend>Screening {index + 1}</legend>
-                  <label className="admin-field">
-                    Cinema and auditorium
-                    <select
-                      value={screening.auditoriumId}
-                      onChange={(event) => setScreenings((current) => current.map((item, i) =>
-                        i === index ? { ...item, auditoriumId: event.target.value } : item
-                      ))}
-                      required
-                    >
-                      <option value="">Select an auditorium</option>
-                      {auditoriums.map((auditorium) => (
-                        <option key={auditorium.id} value={auditorium.id}>
-                          {auditorium.cinemaName} — {auditorium.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="admin-field">
-                    Date and time
-                    <input
-                      type="datetime-local"
-                      value={screening.localStart}
-                      onChange={(event) => setScreenings((current) => current.map((item, i) =>
-                        i === index ? { ...item, localStart: event.target.value } : item
-                      ))}
-                      required
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    disabled={screenings.length === 1}
-                    onClick={() => setScreenings((current) => current.filter((_, i) => i !== index))}
-                  >
-                    Remove screening
-                  </button>
-                </fieldset>
-              ))}
-              <button
-                type="button"
-                disabled={isAdding}
-                onClick={() => setScreenings((current) => [...current, { auditoriumId: '', localStart: '' }])}
-              >
-                Add another screening
-              </button>
-            </div>
+            </section>
           )}
-
-          <div className="admin-form-divider" />
-
-          <div className="admin-section-heading">
-            <div>
-              <h3>Ticket pricing</h3>
-            </div>
-          </div>
-          <div className="admin-pricing">
-            <label className="admin-field admin-pricing__field">
-              Standard ticket
-              <span className="admin-field__unit admin-field__unit--currency">
-                <span>€</span>
-                <input
-                  type="number"
-                  name="ticket-price"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={ticketPrice}
-                  onChange={(event) => setTicketPrice(event.target.value)}
-                  disabled={isAdding}
-                  aria-describedby={!ticketPrice || Number(ticketPrice) <= 0 ? 'price-warning' : undefined}
-                />
-              </span>
-            </label>
-            {(!ticketPrice || Number(ticketPrice) <= 0) && (
-              <p className="admin-price-warning" id="price-warning" role="note">
-                <span aria-hidden="true">!</span>
-                Ticket price is required. Add a price before publishing this movie.
-              </p>
-            )}
-          </div>
-
-          <div className="admin-form-actions">
-            <button className="admin-button admin-button--primary" type="submit"
-            disabled={isAdding || isSearching || isLoadingDetails}
-            >
-              {isAdding ? 'Adding...' : 'Add movie'}
-              <span aria-hidden="true">+</span>
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="admin-panel admin-reservations" aria-labelledby="reservations-title">
-        <div className="admin-panel__heading admin-reservations__heading">
-          <div>
-            <h2 id="reservations-title">Reservations</h2>
-          </div>
-        </div>
-
-        <div className="admin-table-scroll">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th scope="col">Reservation</th>
-                <th scope="col">Customer</th>
-                <th scope="col">Movie &amp; showtime</th>
-                <th scope="col">Seats</th>
-                <th scope="col">Total</th>
-                <th scope="col">Status</th>
-                <th scope="col">
-                  <span className="admin-visually-hidden">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {reservations.map((reservation) => (
-                <tr key={reservation.id}>
-                  <td className="admin-table__id">{reservation.id}</td>
-                  <td>
-                    <span className="admin-table__customer">{reservation.customer}</span>
-                    <span className="admin-table__subtext">{reservation.email}</span>
-                  </td>
-                  <td>
-                    <span className="admin-table__customer">{reservation.movie}</span>
-                    <span className="admin-table__subtext">{reservation.showtime}</span>
-                  </td>
-                  <td>{reservation.seats}</td>
-                  <td className="admin-table__total">{reservation.total}</td>
-                  <td>
-                    <span
-                      className={`admin-status ${reservation.status === 'Pending' ? 'admin-status--pending' : ''}`}
-                    >
-                      <span />
-                      {reservation.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="admin-table__action" type="button">
-                      Manage
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+          {(section === 'add' || section === 'edit') && (
+            <AdminMovieForm
+              key={section === 'edit' ? selected.id : 'add'}
+              movie={section === 'edit' ? selected : null}
+              requestConfirmation={setConfirmation}
+              onCancel={() => setConfirmation({
+                kind: 'cancel',
+                title: 'Discard your changes?',
+                onConfirm: () => { setSection(section === 'edit' ? 'details' : 'list'); setError('') },
+              })}
+              onDelete={requestDelete}
+              onSaved={(saved, edited) => {
+                setSelected(null)
+                setNotice(`${saved.title} ${edited ? 'updated' : 'added'} successfully.`)
+                setSection('list')
+                setRevision((value) => value + 1)
+              }}
+            />
+          )}
+          {section === 'details' && selected && (
+            <section className="admin-panel">
+              <button className="admin-action admin-action--gold" onClick={() => setSection('list')}>Back to movies</button>
+              <div className={`movie-detail${selected.poster_url ? '' : ' movie-detail--without-poster'}`}>
+                {selected.poster_url && <div className="movie-detail__poster"><img src={selected.poster_url} alt={`${selected.title} poster`} /></div>}
+                <div className="movie-detail__content">
+                  <p className="movie-detail__eyebrow">{selected.coming_soon ? 'Coming soon' : 'Available'}</p>
+                  <h1>{selected.title}</h1>
+                  <div className="movie-detail__metadata"><span>{selected.genre}</span><span>{selected.rated ? `Age rating: ${selected.rated}` : ''}</span></div>
+                  <div className="admin-movies__actions">
+                    <button className="admin-action admin-action--gold" onClick={() => setSection('edit')}>Edit details</button>
+                    <button className="admin-action admin-action--gold" disabled title="Screening management is coming later">View screenings</button>
+                  </div>
+                  <p>Screening management is coming later.</p>
+                  {selected.plot && <div className="movie-detail__section"><h2>About the movie</h2><p>{selected.plot}</p></div>}
+                  {selected.actors && <div className="movie-detail__section"><h2>Cast</h2><p>{selected.actors}</p></div>}
+                  {selected.director && <div className="movie-detail__section"><h2>Director</h2><p>{selected.director}</p></div>}
+                </div>
+              </div>
+            </section>
+          )}
+        </>
+      )}
+      {!isDashboard && !isMovies && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
+      {confirmation && <ConfirmationDialog confirmation={confirmation} onDismiss={() => setConfirmation(null)} />}
     </main>
   )
 }

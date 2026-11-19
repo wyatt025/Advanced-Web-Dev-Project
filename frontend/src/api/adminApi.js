@@ -60,18 +60,32 @@ async function movieRequestError(response, operation) {
     throw new Error(`Could not ${operation} movie data (HTTP ${response.status}).`);
 }
 export async function getMovies() {
-    const response = await fetch('/api/admin/movies');
+    const response = await fetch('/api/admin/movies', { cache: 'no-store' });
     if (!response.ok) {
-        throw new Error(`Fetching movies failed: ${response.statusText}`);
+        await movieRequestError(response, 'load');
     }
     return response.json();
 }
+export async function getDashboardMetrics(signal) {
+    const response = await fetch('/api/admin/metrics', { cache: 'no-store', signal });
+    if (!response.ok) await movieRequestError(response, 'load dashboard metrics');
+    return response.json();
+}
+export async function updateMovie(movieId, movieData) {
+    const response = await fetch(`/api/admin/movies/${encodeURIComponent(movieId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(movieData),
+    });
+    if (!response.ok) await movieRequestError(response, 'update');
+    return response.json();
+}
 export async function deleteMovie(movieId) {
-    const response = await fetch(`/api/admin/movies/${movieId}`, {
+    const response = await fetch(`/api/admin/movies/${encodeURIComponent(movieId)}`, {
         method: 'DELETE',
     });
     if (!response.ok) {
-        throw new Error(`Deleting movie failed: ${response.statusText}`);
+        await movieRequestError(response, 'delete');
     }
     return response.json();
 }
