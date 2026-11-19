@@ -143,6 +143,15 @@ adminRouter.get('/auditoriums', async (req, res) => {
 });
 
 //----- Movie Management Routes -----------
+adminRouter.get('/metrics', async (req, res) => {
+    try {
+        return res.json(await adminModel.getDashboardMetrics());
+    } catch (err) {
+        console.error('Dashboard metrics lookup failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not load dashboard metrics' });
+    }
+});
+
 adminRouter.get('/movies', async (req, res) => {
     try {
         const result = await adminModel.getAllMovies();
@@ -189,14 +198,38 @@ adminRouter.post('/movies', async (req, res) => {
 
 adminRouter.put('/movies/:id', async (req, res) => {
     try {
-        const result = await adminModel.updateMovie(req.params.id, req.body);
+        if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+            throw new MovieValidationError('Movie data must be an object');
+        }
+        const current = await adminModel.getMovieById(req.params.id);
+        if (!current) return res.status(404).json({ error: 'Movie not found' });
+        const existing = {
+            ...current,
+            price: current.price == null ? '' : String(current.price),
+            coming_soon: Boolean(current.coming_soon),
+            released_date: current.released_date instanceof Date
+                ? current.released_date.toISOString().slice(0, 10)
+                : current.released_date,
+        };
+        const movie = validateMovie({ ...existing, ...req.body });
+        const result = await adminModel.updateMovie(req.params.id, movie);
         if (result) {
             res.json(result);
         } else {
             res.status(404).json({ error: 'Movie not found' });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        if (err instanceof MovieValidationError) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Movie has already been added' });
+        }
+        if (err.code === 'SCREENING_CONFLICT') {
+            return res.status(409).json({ error: err.message });
+        }
+        console.error('Movie update failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not update movie' });
     }
 });
 

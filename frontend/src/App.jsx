@@ -83,7 +83,7 @@ function App() {
             <Route path="/success" element={<Success />} />
             <Route path="/cancel" element={<Cancel />} />
             <Route path="/login" element={<LoginPage onSessionChange={updateSession} />} />
-            <Route path="/admin" element={
+            <Route path="/admin/*" element={
               <AdminRoute
                 session={session}
                 sessionLoading={sessionLoading}
