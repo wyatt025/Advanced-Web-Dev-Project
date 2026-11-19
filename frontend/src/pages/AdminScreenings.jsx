@@ -295,7 +295,7 @@ export default function AdminScreenings({ requestConfirmation }) {
   return <>
     {error && <p className="admin-feedback" role="alert">{error}</p>}
     {notice && <p className="admin-feedback" role="status">{notice}</p>}
-    {section === 'list' && <section className="admin-panel admin-movies">
+    {section === 'list' && <section className="admin-panel admin-movies admin-screenings">
       <h1>Screenings</h1>
       <div className="admin-movies__toolbar">
         <label className="admin-field"><span className="admin-visually-hidden">Search screenings</span><input type="search" placeholder="Movie, IMDb ID, cinema or auditorium..." value={query} onChange={(event) => setQuery(event.target.value)} /></label>
@@ -307,7 +307,7 @@ export default function AdminScreenings({ requestConfirmation }) {
       {loading ? <p role="status">Loading screenings...</p> : error ? <button className="admin-action admin-action--gold" onClick={() => { setLoading(true); setRevision((value) => value + 1) }}>Retry</button> : filtered.length === 0 ? <p>No screenings match your search.</p> :
         <ul className="admin-movies__list">{filtered.map((item) => {
           const { date, time } = screeningDateParts(item.date)
-          return <li className="admin-movies__row" key={item.id}>
+          return <li className="admin-movies__row admin-screening-list-row" key={item.id}>
             <div className="admin-movies__details admin-screening-list-details">
               <div><strong>{item.title}:</strong> <span>{item.cinema}</span></div>
               <div className="admin-screening-list-metadata"><span>{time}</span><span>{date}</span><span>{item.auditorium}</span></div>
