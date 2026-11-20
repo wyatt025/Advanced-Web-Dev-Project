@@ -2,7 +2,6 @@ export default function BuyTickets({
   screening,
   ticketPrice,
   seatCount,
-  canCheckout,
   email,
   onEmailChange,
   onCheckout,
@@ -33,7 +32,7 @@ export default function BuyTickets({
       <button
         className="ticket-summary__continue"
         type="button"
-        disabled={!canCheckout || !screening || seatCount === 0 || !validEmail || !validPrice || isCheckingOut}
+        disabled={!screening || seatCount === 0 || !validEmail || !validPrice || isCheckingOut}
         onClick={onCheckout}
       >
         {isCheckingOut ? 'Opening checkout...' : 'Continue to payment'}

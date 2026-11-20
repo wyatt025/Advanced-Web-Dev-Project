@@ -38,11 +38,13 @@ function TicketPage() {
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const currentBooking = booking?.key === requestKey
     ? booking
-    : { cinemaId: '', screeningId: '', seats: [], gapMessage: '' }
+    : { cinemaId: '', screeningId: '', seats: [] }
   const selectedCinemaId = currentBooking.cinemaId
   const selectedScreeningId = currentBooking.screeningId
   const selectedSeats = currentBooking.seats
-  const seatGapMessage = currentBooking.gapMessage
+  const seatGapMessage = leavesSeatGap(selectedSeats)
+    ? 'To avoid inconvenience, please do not leave a gap inbetween selected seats.'
+    : ''
   const movie = movieResult?.key === requestKey ? movieResult.movie : null
   useEffect(() => {
     const controller = new AbortController()
@@ -118,14 +120,11 @@ function TicketPage() {
       cinemaId: selectedCinemaId,
       screeningId: selectedScreeningId,
       seats: nextSeats,
-      gapMessage: leavesSeatGap(nextSeats)
-        ? 'Please do not leave a gap between reserved seats.'
-        : '',
     })
   }
 
   async function handleCheckout() {
-    if (!selectedScreening || !selectedSeats.length || seatGapMessage) return
+    if (!selectedScreening || !selectedSeats.length) return
     setCheckoutError('')
     setIsCheckingOut(true)
 
@@ -144,7 +143,6 @@ function TicketPage() {
           cinemaId: selectedCinemaId,
           screeningId: selectedScreeningId,
           seats: [],
-          gapMessage: '',
         })
         try {
           const latestMovie = await getMovie(movieId)
@@ -190,7 +188,6 @@ function TicketPage() {
                   cinemaId: String(id),
                   screeningId: '',
                   seats: [],
-                  gapMessage: '',
                 })}
               >
                 {name}
@@ -219,7 +216,6 @@ function TicketPage() {
                   cinemaId: selectedCinemaId,
                   screeningId: String(screening.id),
                   seats: [],
-                  gapMessage: '',
                 })
               }}
             >
@@ -328,7 +324,6 @@ function TicketPage() {
           screening={selectedScreening}
           ticketPrice={movie.price}
           seatCount={selectedSeats.length}
-          canCheckout={!seatGapMessage}
           email={email}
           onEmailChange={setEmail}
           onCheckout={handleCheckout}
