@@ -26,7 +26,7 @@ const connection = {
         if (sql.includes('SELECT s.id, m.runtime_minutes')) return [conflict ? [{ id: 99, runtime_minutes: 90 }] : []];
         if (sql.startsWith('SELECT auditorium_id FROM screenings')) return [[{ auditorium_id: current.auditorium_id }]];
         if (sql.startsWith('SELECT id, movie_id, auditorium_id')) return [[current]];
-        if (sql.startsWith('SELECT id FROM reservations')) return [reservations ? [{ id: 10 }] : []];
+        if (sql.startsWith('SELECT seatNumber FROM v_taken_seats')) return [reservations ? [{ seatNumber: 10 }] : []];
         return [{ affectedRows: 1 }];
     },
 };

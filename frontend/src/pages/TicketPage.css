@@ -314,6 +314,49 @@
   cursor: not-allowed;
 }
 
+.ticket-summary__purchase {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 8px 14px;
+}
+
+.ticket-purchase__email {
+  display: grid;
+  gap: 6px;
+  color: #a99f8d;
+  font-size: 11px;
+}
+
+.ticket-purchase__email input {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #494034;
+  border-radius: 6px;
+  color: var(--text);
+  background: #12110f;
+  font: inherit;
+}
+
+.ticket-purchase__email input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.ticket-purchase__total {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 12px;
+  text-align: right;
+}
+
+.ticket-purchase__error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #ff9a8b;
+  font-size: 12px;
+}
+
 @media (max-width: 640px) {
   .ticket-page {
     padding: 22px 14px 30px;
@@ -347,14 +390,19 @@
     gap: 12px;
     font-size: 10px;
   }
-}
 
-@media (max-width: 380px) {
   .ticket-summary {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .ticket-summary__purchase {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-purchase__total {
+    text-align: left;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

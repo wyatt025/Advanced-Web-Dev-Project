@@ -7,7 +7,7 @@ const screeningFields = `s.id, s.movie_id AS movieId, s.auditorium_id AS auditor
     m.title, m.imdb_id AS imdbId, m.poster_url AS posterUrl, m.runtime_minutes AS runtimeMinutes,
     a.name AS auditorium, a.maxSeats AS seatCapacity, a.accessibleSeats AS accessibleSeatCount,
     c.id AS cinemaId, c.name AS cinema,
-    (SELECT COUNT(*) FROM reservations r WHERE r.screening_id = s.id) AS reservationCount`;
+    (SELECT COUNT(*) FROM v_taken_seats taken WHERE taken.screening_id = s.id) AS reservationCount`;
 const screeningJoins = `FROM screenings s JOIN movies m ON m.id = s.movie_id
     JOIN auditoriums a ON a.id = s.auditorium_id JOIN cinemas c ON c.id = a.cinema_id`;
 
@@ -101,7 +101,7 @@ module.exports = {
     async details(id) {
         const [rows] = await pools.admin.execute(`SELECT ${screeningFields} ${screeningJoins} WHERE s.id = ?`, [id]);
         if (!rows.length) return undefined;
-        const [seats] = await pools.admin.execute('SELECT seatNumber FROM reservations WHERE screening_id = ?', [id]);
+        const [seats] = await pools.admin.execute('SELECT seatNumber FROM v_taken_seats WHERE screening_id = ?', [id]);
         return { ...rows[0], takenSeats: seats.map((seat) => seat.seatNumber).filter((seat) => seat !== null) };
     },
     async check(screenings, excludeId = 0) {
@@ -136,7 +136,7 @@ module.exports = {
                 throw error;
             }
             const [reservations] = await connection.execute(
-                'SELECT id FROM reservations WHERE screening_id = ? LIMIT 1 FOR UPDATE', [id]
+                'SELECT seatNumber FROM v_taken_seats WHERE screening_id = ? LIMIT 1', [id]
             );
             if (reservations.length && (rows[0].movie_id !== screening.movieId || rows[0].auditorium_id !== screening.auditoriumId)) {
                 const error = new Error('A screening with reservations can only have its time changed');

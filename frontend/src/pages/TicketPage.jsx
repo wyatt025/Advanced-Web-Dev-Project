@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { startCheckout } from '../api.js'
 import { getMovie } from '../api/moviesApi.js'
 import BuyTickets from './BuyTickets.jsx'
 import { hasAvailableRegularSeat, regularSeats } from './screeningAvailability.js'
@@ -32,6 +33,9 @@ function TicketPage() {
   const requestKey = movieId
   const [movieResult, setMovieResult] = useState(null)
   const [booking, setBooking] = useState(null)
+  const [email, setEmail] = useState('')
+  const [checkoutError, setCheckoutError] = useState('')
+  const [isCheckingOut, setIsCheckingOut] = useState(false)
   const currentBooking = booking?.key === requestKey
     ? booking
     : { cinemaId: '', screeningId: '', seats: [], gapMessage: '' }
@@ -118,6 +122,40 @@ function TicketPage() {
         ? 'Please do not leave a gap between reserved seats.'
         : '',
     })
+  }
+
+  async function handleCheckout() {
+    if (!selectedScreening || !selectedSeats.length || seatGapMessage) return
+    setCheckoutError('')
+    setIsCheckingOut(true)
+
+    try {
+      const { url } = await startCheckout({
+        screeningId: Number(selectedScreening.id),
+        seatIds: selectedSeats,
+        email,
+      })
+      window.location.assign(url)
+    } catch (error) {
+      setCheckoutError(error.message || 'Could not start checkout.')
+      if (error.status === 409) {
+        setBooking({
+          key: requestKey,
+          cinemaId: selectedCinemaId,
+          screeningId: selectedScreeningId,
+          seats: [],
+          gapMessage: '',
+        })
+        try {
+          const latestMovie = await getMovie(movieId)
+          setMovieResult({ key: requestKey, movie: latestMovie })
+        } catch (refreshError) {
+          setCheckoutError(`${error.message} Could not refresh seat availability: ${refreshError.message}`)
+        }
+      }
+    } finally {
+      setIsCheckingOut(false)
+    }
   }
 
   return (
@@ -284,17 +322,20 @@ function TicketPage() {
               {seatGapMessage}
             </span>
           )}
-          <span>Seat selections are not saved. Ticket purchasing is not available yet.</span>
+          <span>Seats are held for a limited time after you continue to checkout.</span>
         </div>
-        <button
-          className="ticket-summary__continue"
-          type="button"
-          disabled
-        >
-          Continue
-        </button>
+        <BuyTickets
+          screening={selectedScreening}
+          ticketPrice={movie.price}
+          seatCount={selectedSeats.length}
+          canCheckout={!seatGapMessage}
+          email={email}
+          onEmailChange={setEmail}
+          onCheckout={handleCheckout}
+          isCheckingOut={isCheckingOut}
+          error={checkoutError}
+        />
       </footer>
-      <BuyTickets />
     </main>
   )
 }
