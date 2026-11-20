@@ -293,6 +293,7 @@ test('starts checkout from a real screening id and persists the generated sessio
     assert.equal(result.url, 'https://checkout.stripe.test/session');
     assert.equal(checkoutCalls[0].line_items[0].price_data.unit_amount, 1250);
     assert.equal(checkoutCalls[0].line_items[0].quantity, 2);
+    assert.equal(checkoutCalls[0].branding_settings.display_name, 'Rio Cinema');
     assert.equal(checkoutCalls[0].success_url.startsWith('https://rio.example/success?booking_id='), true);
 
     const booking = await fetch(`${base}/bookings/${result.bookingId}`);

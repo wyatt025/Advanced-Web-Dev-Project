@@ -105,6 +105,9 @@ function createStripeRouter({
                     },
                     quantity: booking.seatIds.length,
                 }],
+                branding_settings: {
+                    display_name: 'Rio Cinema',
+                },
                 metadata: { bookingId: booking.id },
                 expires_at: checkoutExpiresAt,
                 success_url: `${publicUrl.origin}/success?booking_id=${encodeURIComponent(booking.id)}`,

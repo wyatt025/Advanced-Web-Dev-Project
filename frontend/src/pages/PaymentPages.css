@@ -102,7 +102,6 @@
   margin-top: 20px;
 }
 
-.payment-receipt__actions button,
 .payment-receipt__actions a {
   display: inline-flex;
   min-height: 42px;
@@ -125,7 +124,6 @@
   background: transparent;
 }
 
-.payment-receipt__actions button:focus-visible,
 .payment-receipt__actions a:focus-visible {
   outline: 2px solid var(--text-h);
   outline-offset: 3px;
@@ -138,27 +136,5 @@
 
   .payment-receipt__details {
     grid-template-columns: 1fr;
-  }
-}
-
-@media print {
-  .payment-page {
-    max-width: none;
-    padding: 0;
-  }
-
-  .payment-receipt {
-    border-color: #aaa;
-    color: #111;
-    background: #fff;
-  }
-
-  .payment-receipt h1,
-  .payment-receipt__details dd {
-    color: #111;
-  }
-
-  .payment-receipt__actions {
-    display: none;
   }
 }

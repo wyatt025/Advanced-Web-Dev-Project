@@ -84,7 +84,6 @@ export function Success() {
           </dl>
 
           <div className="payment-receipt__actions">
-            <button type="button" onClick={() => window.print()}>Print receipt</button>
             <Link to="/">Back to movies</Link>
           </div>
         </article>
