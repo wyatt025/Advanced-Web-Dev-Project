@@ -111,6 +111,7 @@ test('validates seat layout, checkout email, and integer Stripe prices', () => {
 test('creates a temporary database hold under a screening lock before checkout', async () => {
     modelCalls.length = 0;
     modelQueryHandler = async (sql) => {
+        if (sql.startsWith('SELECT id FROM screenings')) return [[{ id: 8 }]];
         if (sql.includes('SELECT s.id, s.auditorium_id')) {
             return [[{
                 id: 8,
@@ -135,7 +136,13 @@ test('creates a temporary database hold under a screening lock before checkout',
 
     assert.equal(booking.amountCents, 1250);
     assert.deepEqual(booking.seatIds, [1, 2]);
-    assert.ok(modelCalls[1].sql.includes('FOR UPDATE'));
+    const screeningLock = modelCalls.find((call) => call.sql?.startsWith('SELECT id FROM screenings'));
+    const screeningDetails = modelCalls.find((call) => call.sql?.includes('SELECT s.id, s.auditorium_id'));
+    const takenSeats = modelCalls.find((call) => call.sql?.includes('SELECT seatNumber FROM reservations'));
+    assert.ok(screeningLock.sql.includes('FOR UPDATE'));
+    assert.equal(screeningLock.sql.includes('JOIN'), false);
+    assert.equal(screeningDetails.sql.includes('FOR UPDATE'), false);
+    assert.equal(takenSeats.sql.includes('FOR UPDATE'), false);
     assert.equal(modelCalls.filter((call) => call.sql?.includes('INSERT INTO reservations')).length, 2);
     assert.ok(modelCalls.includes('commit'));
     assert.ok(modelCalls.includes('release'));
@@ -144,6 +151,7 @@ test('creates a temporary database hold under a screening lock before checkout',
 test('rolls back a booking when a requested seat is already reserved', async () => {
     modelCalls.length = 0;
     modelQueryHandler = async (sql) => {
+        if (sql.startsWith('SELECT id FROM screenings')) return [[{ id: 8 }]];
         if (sql.includes('SELECT s.id, s.auditorium_id')) {
             return [[{
                 id: 8,

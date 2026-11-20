@@ -16,7 +16,9 @@ For an existing CSC Rahti database, apply
 `migrations/20261118_add_checkout_reservations.sql` once using a database
 administrator before deploying the backend update. The migration extends the
 existing `role_auth` account used by the backend; keep its password in the
-Rahti secret/environment configuration as `APP_AUTH_PASS`.
+Rahti secret/environment configuration as `APP_AUTH_PASS`. `role_auth` needs
+`UPDATE` on `screenings` so checkout can lock a screening row while creating a
+seat hold; the checkout flow does not update screening data.
 
 Configure these backend environment variables in Rahti:
 

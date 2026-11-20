@@ -180,6 +180,7 @@ GRANT INSERT, UPDATE, DELETE ON riocinemadb.auditoriums TO 'role_admin';
 
 -- Auth: password lookup, registration, and ticket payment processing.
 GRANT 'role_public' TO 'role_auth';
+GRANT UPDATE ON riocinemadb.screenings TO 'role_auth';
 GRANT SELECT (id, name, email, phone, password, role) ON riocinemadb.users TO 'role_auth';
 GRANT INSERT (name, password, email, phone, role)    ON riocinemadb.users TO 'role_auth';
 GRANT UPDATE (password, phone, email, name)          ON riocinemadb.users TO 'role_auth';

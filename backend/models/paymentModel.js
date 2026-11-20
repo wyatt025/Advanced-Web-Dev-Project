@@ -59,6 +59,18 @@ function formatUtcDateTime(epochSeconds) {
 const paymentModel = {
     createPendingBooking({ id, screeningId, seatIds, email, checkoutExpiresAt }) {
         return transaction(async (connection) => {
+            const [lockedScreenings] = await connection.execute(
+                `SELECT id FROM screenings
+                 WHERE id = ? AND date > UTC_TIMESTAMP()
+                 FOR UPDATE`,
+                [screeningId]
+            );
+            if (!lockedScreenings.length) {
+                const error = new Error('That screening is no longer available.');
+                error.code = 'SCREENING_UNAVAILABLE';
+                throw error;
+            }
+
             const [screenings] = await connection.execute(
                 `SELECT s.id, s.auditorium_id AS auditoriumId, m.title, m.price,
                         a.maxSeats AS seatCapacity, a.accessibleSeats AS accessibleSeatCount
@@ -69,8 +81,7 @@ const paymentModel = {
                  WHERE s.id = ?
                    AND s.date > UTC_TIMESTAMP()
                    AND a.isOpen = TRUE
-                   AND c.isOpen = TRUE
-                 FOR UPDATE`,
+                   AND c.isOpen = TRUE`,
                 [screeningId]
             );
             if (!screenings.length) {
@@ -88,8 +99,7 @@ const paymentModel = {
             const placeholders = seats.map(() => '?').join(', ');
             const [takenSeats] = await connection.execute(
                 `SELECT seatNumber FROM reservations
-                 WHERE screening_id = ? AND seatNumber IN (${placeholders})
-                 FOR UPDATE`,
+                 WHERE screening_id = ? AND seatNumber IN (${placeholders})`,
                 [screeningId, ...seats]
             );
             if (takenSeats.length) {

@@ -39,6 +39,7 @@ WHERE r.booking_id IS NULL
    OR (b.status = 'pending_payment' AND b.hold_expires_at > UTC_TIMESTAMP());
 
 GRANT 'role_public' TO 'role_auth';
+GRANT UPDATE ON riocinemadb.screenings TO 'role_auth';
 GRANT SELECT (id, auditorium_id, screening_id, seatNumber, isPaid, booking_id)
   ON riocinemadb.reservations TO 'role_auth';
 GRANT INSERT (seatNumber, auditorium_id, user_id, screening_id, isPaid, booking_id)
