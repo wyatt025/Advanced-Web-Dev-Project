@@ -154,7 +154,11 @@ function createStripeRouter({
                 return res.status(503).json({ error: 'Ticket checkout is not configured.' });
             }
 
-            console.error('Could not create Checkout Session:', error.code || error.message);
+            console.error(
+                'Could not create Checkout Session:',
+                error.code || 'UNKNOWN_ERROR',
+                error.sqlMessage || error.message
+            );
             return res.status(502).json({ error: 'Could not start checkout. Please try again.' });
         }
     });
