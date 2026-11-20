@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getBooking } from '../api';
+import { formatScreeningDate } from './screeningDates.js';
+import './PaymentPages.css';
+
+function formatAmount(cents) {
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(cents / 100);
+}
 
 export function Success() {
   const id = new URLSearchParams(window.location.search).get('booking_id');
@@ -33,7 +40,56 @@ export function Success() {
 
   if (!id) return <p>Missing booking information.</p>;
   if (booking?.status === 'paid') {
-    return <p>Payment received. Seats: {booking.seatIds.join(', ')}.</p>;
+    return (
+      <section className="payment-page">
+        <article className="payment-receipt" aria-labelledby="payment-receipt-title">
+          <p className="payment-receipt__status">
+            <span aria-hidden="true">✓</span>
+            Payment confirmed
+          </p>
+          <h1 id="payment-receipt-title">Ticket receipt</h1>
+          <p className="payment-receipt__intro">Your booking is confirmed. Keep this receipt for your visit.</p>
+
+          <dl className="payment-receipt__details">
+            <div>
+              <dt>Movie</dt>
+              <dd>{booking.movieTitle}</dd>
+            </div>
+            <div>
+              <dt>Screening</dt>
+              <dd>{formatScreeningDate(booking.screeningDate)}</dd>
+            </div>
+            <div>
+              <dt>Cinema</dt>
+              <dd>{booking.cinemaName}</dd>
+            </div>
+            <div>
+              <dt>Auditorium</dt>
+              <dd>{booking.auditoriumName || 'Details unavailable'}</dd>
+            </div>
+            <div>
+              <dt>Seats</dt>
+              <dd className="payment-receipt__seats">
+                {booking.seatIds.map((seat) => <span key={seat}>{seat}</span>)}
+              </dd>
+            </div>
+            <div>
+              <dt>Booking reference</dt>
+              <dd><code>{booking.id}</code></dd>
+            </div>
+            <div className="payment-receipt__total">
+              <dt>Total paid</dt>
+              <dd>{booking.totalAmountCents == null ? 'Unavailable' : formatAmount(booking.totalAmountCents)}</dd>
+            </div>
+          </dl>
+
+          <div className="payment-receipt__actions">
+            <button type="button" onClick={() => window.print()}>Print receipt</button>
+            <Link to="/">Back to movies</Link>
+          </div>
+        </article>
+      </section>
+    );
   }
   if (booking?.status === 'expired' || booking?.status === 'cancelled') {
     return <p>Payment was not completed. The seat hold has been released.</p>;

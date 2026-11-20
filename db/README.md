@@ -19,6 +19,9 @@ existing `role_auth` account used by the backend; keep its password in the
 Rahti secret/environment configuration as `APP_AUTH_PASS`. `role_auth` needs
 `UPDATE` on `screenings` so checkout can lock a screening row while creating a
 seat hold; the checkout flow does not update screening data.
+For existing databases, apply `migrations/20261120_add_booking_receipt_total.sql`
+once as a database administrator before deploying the receipt update. It stores
+the charged total so the receipt reflects the amount paid at checkout.
 
 Configure these backend environment variables in Rahti:
 

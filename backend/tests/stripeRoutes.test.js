@@ -60,7 +60,16 @@ const paymentModel = {
     },
     async cancelBooking() {},
     async getBooking(id) {
-        return { id, status: 'paid', seatIds: [1, 2] };
+        return {
+            id,
+            status: 'paid',
+            totalAmountCents: 2500,
+            movieTitle: 'Example Movie',
+            screeningDate: '2026-12-01T18:30:00.000Z',
+            cinemaName: 'Rio Cinema',
+            auditoriumName: 'Auditorium 1',
+            seatIds: [1, 2],
+        };
     },
     async processStripeEvent(event) {
         const duplicate = processedEvents.includes(event.id);
@@ -135,6 +144,7 @@ test('creates a temporary database hold under a screening lock before checkout',
     });
 
     assert.equal(booking.amountCents, 1250);
+    assert.equal(booking.totalAmountCents, 2500);
     assert.deepEqual(booking.seatIds, [1, 2]);
     const screeningLock = modelCalls.find((call) => call.sql?.startsWith('SELECT id FROM screenings'));
     const screeningDetails = modelCalls.find((call) => call.sql?.includes('SELECT s.id, s.auditorium_id'));
@@ -143,6 +153,8 @@ test('creates a temporary database hold under a screening lock before checkout',
     assert.equal(screeningLock.sql.includes('JOIN'), false);
     assert.equal(screeningDetails.sql.includes('FOR UPDATE'), false);
     assert.equal(takenSeats.sql.includes('FOR UPDATE'), false);
+    const bookingInsert = modelCalls.find((call) => call.sql?.includes('INSERT INTO ticket_bookings'));
+    assert.equal(bookingInsert.params[3], 2500);
     assert.equal(modelCalls.filter((call) => call.sql?.includes('INSERT INTO reservations')).length, 2);
     assert.ok(modelCalls.includes('commit'));
     assert.ok(modelCalls.includes('release'));
@@ -178,6 +190,49 @@ test('rolls back a booking when a requested seat is already reserved', async () 
     );
     assert.ok(modelCalls.includes('rollback'));
     assert.equal(modelCalls.some((call) => call.sql?.includes('INSERT INTO ticket_bookings')), false);
+});
+
+test('returns receipt details and seats for a booking', async () => {
+    modelCalls.length = 0;
+    modelQueryHandler = async (sql) => {
+        if (sql.includes('SELECT b.id, b.status')) {
+            return [[
+                {
+                    id: 'a7e4f8e1-0ab3-4f90-b8d2-70a6e45111e8',
+                    status: 'paid',
+                    totalAmountCents: 2500,
+                    movieTitle: 'Example Movie',
+                    screeningDate: '2026-12-01T18:30:00.000Z',
+                    cinemaName: 'Rio Cinema',
+                    auditoriumName: 'Auditorium 1',
+                    seatNumber: 1,
+                },
+                {
+                    id: 'a7e4f8e1-0ab3-4f90-b8d2-70a6e45111e8',
+                    status: 'paid',
+                    totalAmountCents: 2500,
+                    movieTitle: 'Example Movie',
+                    screeningDate: '2026-12-01T18:30:00.000Z',
+                    cinemaName: 'Rio Cinema',
+                    auditoriumName: 'Auditorium 1',
+                    seatNumber: 2,
+                },
+            ]];
+        }
+        return [{ affectedRows: 0 }];
+    };
+
+    const booking = await paymentModelDb.getBooking('a7e4f8e1-0ab3-4f90-b8d2-70a6e45111e8');
+    assert.deepEqual(booking, {
+        id: 'a7e4f8e1-0ab3-4f90-b8d2-70a6e45111e8',
+        status: 'paid',
+        totalAmountCents: 2500,
+        movieTitle: 'Example Movie',
+        screeningDate: '2026-12-01T18:30:00.000Z',
+        cinemaName: 'Rio Cinema',
+        auditoriumName: 'Auditorium 1',
+        seatIds: [1, 2],
+    });
 });
 
 test('marks reservations paid only while processing a paid webhook event', async () => {
@@ -244,6 +299,11 @@ test('starts checkout from a real screening id and persists the generated sessio
     assert.deepEqual(await booking.json(), {
         id: result.bookingId,
         status: 'paid',
+        totalAmountCents: 2500,
+        movieTitle: 'Example Movie',
+        screeningDate: '2026-12-01T18:30:00.000Z',
+        cinemaName: 'Rio Cinema',
+        auditoriumName: 'Auditorium 1',
         seatIds: [1, 2],
     });
 

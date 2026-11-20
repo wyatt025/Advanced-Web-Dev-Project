@@ -93,6 +93,7 @@ const paymentModel = {
             const screening = screenings[0];
             const seats = normalizeSeatIds(seatIds, screening.seatCapacity, screening.accessibleSeatCount);
             const amountCents = priceToCents(screening.price);
+            const totalAmountCents = amountCents * seats.length;
 
             await expireStaleBookings(connection, screeningId);
 
@@ -111,9 +112,9 @@ const paymentModel = {
             const holdExpiresAt = checkoutExpiresAt + HOLD_GRACE_SECONDS;
             await connection.execute(
                 `INSERT INTO ticket_bookings
-                    (id, screening_id, user_id, email, status, hold_expires_at)
-                 VALUES (?, ?, NULL, ?, 'pending_payment', ?)`,
-                [id, screeningId, email, formatUtcDateTime(holdExpiresAt)]
+                    (id, screening_id, user_id, email, total_amount_cents, status, hold_expires_at)
+                 VALUES (?, ?, NULL, ?, ?, 'pending_payment', ?)`,
+                [id, screeningId, email, totalAmountCents, formatUtcDateTime(holdExpiresAt)]
             );
 
             for (const seatNumber of seats) {
@@ -130,6 +131,7 @@ const paymentModel = {
                 title: screening.title,
                 seatIds: seats,
                 amountCents,
+                totalAmountCents,
             };
         }).catch((error) => {
             if (error.code === 'ER_DUP_ENTRY') {
@@ -189,8 +191,16 @@ const paymentModel = {
             );
 
             const [rows] = await connection.execute(
-                `SELECT b.id, b.status, r.seatNumber
+                `SELECT b.id, b.status, b.total_amount_cents AS totalAmountCents,
+                        m.title AS movieTitle,
+                        DATE_FORMAT(s.date, '%Y-%m-%dT%H:%i:%s.000Z') AS screeningDate,
+                        c.name AS cinemaName, a.name AS auditoriumName,
+                        r.seatNumber
                  FROM ticket_bookings b
+                 JOIN screenings s ON s.id = b.screening_id
+                 JOIN movies m ON m.id = s.movie_id
+                 JOIN auditoriums a ON a.id = s.auditorium_id
+                 JOIN cinemas c ON c.id = a.cinema_id
                  LEFT JOIN reservations r ON r.booking_id = b.id
                  WHERE b.id = ?
                  ORDER BY r.seatNumber`,
@@ -200,6 +210,11 @@ const paymentModel = {
             return {
                 id: rows[0].id,
                 status: rows[0].status,
+                totalAmountCents: rows[0].totalAmountCents,
+                movieTitle: rows[0].movieTitle,
+                screeningDate: rows[0].screeningDate,
+                cinemaName: rows[0].cinemaName,
+                auditoriumName: rows[0].auditoriumName,
                 seatIds: rows.filter((row) => row.seatNumber !== null).map((row) => row.seatNumber),
             };
         });

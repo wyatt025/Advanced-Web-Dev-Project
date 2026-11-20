@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `ticket_bookings` (
   `screening_id` INT NOT NULL,
   `user_id` INT NULL,
   `email` VARCHAR(254) NOT NULL,
+  `total_amount_cents` INT NULL,
   `status` ENUM('pending_payment','paid','expired','cancelled') NOT NULL,
   `hold_expires_at` DATETIME NOT NULL,
   `stripe_checkout_session_id` VARCHAR(255) NULL UNIQUE,
