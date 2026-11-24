@@ -33,7 +33,7 @@ export function Success() {
     refreshBooking();
     const timer = setInterval(refreshBooking, 2000);
     return () => {
-      cancelled = true;
+      cancelled = true; 
       clearInterval(timer);
     };
   }, [id]);
@@ -202,40 +202,7 @@ export function Success() {
             Confirming your payment
           </p>
           <h1 id="payment-receipt-title">Ticket receipt</h1>
-          <p className="payment-receipt__intro">Your booking is being processed</p>
-
-          <dl className="payment-receipt__details">
-            <div>
-              <dt>Movie</dt>
-              <dd>{booking.movieTitle}</dd>
-            </div>
-            <div>
-              <dt>Screening</dt>
-              <dd>{formatScreeningDate(booking.screeningDate)}</dd>
-            </div>
-            <div>
-              <dt>Cinema</dt>
-              <dd>{booking.cinemaName}</dd>
-            </div>
-            <div>
-              <dt>Auditorium</dt>
-              <dd>{booking.auditoriumName || 'Details unavailable'}</dd>
-            </div>
-            <div>
-              <dt>Seats</dt>
-              <dd className="payment-receipt__seats">
-                {booking.seatIds.map((seat) => <span key={seat}>{seat}</span>)}
-              </dd>
-            </div>
-            <div>
-              <dt>Booking reference</dt>
-              <dd><code>{booking.id}</code></dd>
-            </div>
-            <div className="payment-receipt__total">
-              <dt>Total paid</dt>
-              <dd>{booking.totalAmountCents == null ? 'Unavailable' : formatAmount(booking.totalAmountCents)}</dd>
-            </div>
-          </dl>
+          <p className="payment-receipt__intro">Your booking is being processed.</p>
 
           <div className="payment-receipt__actions">
             <Link to="/">Back to movies</Link>
