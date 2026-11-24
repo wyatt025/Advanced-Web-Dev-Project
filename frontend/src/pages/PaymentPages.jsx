@@ -43,7 +43,7 @@ export function Success() {
     return (
       <section className="payment-page">
         <article className="payment-receipt" aria-labelledby="payment-receipt-title">
-          <p className="payment-receipt__status">
+          <p className="payment-receipt__status __success">
             <span aria-hidden="true">✓</span>
             Payment confirmed
           </p>
@@ -90,11 +90,159 @@ export function Success() {
       </section>
     );
   }
-  if (booking?.status === 'expired' || booking?.status === 'cancelled') {
-    return <p>Payment was not completed. The seat hold has been released.</p>;
+   if (booking?.status === 'expired') {
+    return (
+      <section className="payment-page">
+        <article className="payment-receipt" aria-labelledby="payment-receipt-title">
+          <p className="payment-receipt__status __error">
+            <span aria-hidden="true">✗</span>
+            Payment Expired
+          </p>
+          <h1 id="payment-receipt-title">Ticket receipt</h1>
+          <p className="payment-receipt__intro">Your booking has expired.</p>
+
+          <dl className="payment-receipt__details">
+            <div>
+              <dt>Movie</dt>
+              <dd>{booking.movieTitle}</dd>
+            </div>
+            <div>
+              <dt>Screening</dt>
+              <dd>{formatScreeningDate(booking.screeningDate)}</dd>
+            </div>
+            <div>
+              <dt>Cinema</dt>
+              <dd>{booking.cinemaName}</dd>
+            </div>
+            <div>
+              <dt>Auditorium</dt>
+              <dd>{booking.auditoriumName || 'Details unavailable'}</dd>
+            </div>
+            <div>
+              <dt>Seats</dt>
+              <dd className="payment-receipt__seats">
+                {booking.seatIds.map((seat) => <span key={seat}>{seat}</span>)}
+              </dd>
+            </div>
+            <div>
+              <dt>Booking reference</dt>
+              <dd><code>{booking.id}</code></dd>
+            </div>
+            <div className="payment-receipt__total">
+              <dt>Total paid</dt>
+              <dd>{booking.totalAmountCents == null ? 'Unavailable' : formatAmount(booking.totalAmountCents)}</dd>
+            </div>
+          </dl>
+
+          <div className="payment-receipt__actions">
+            <Link to="/">Back to movies</Link>
+          </div>
+        </article>
+      </section>
+    );
+  }
+  if(booking?.status === 'cancelled') {
+    return (
+      <section className="payment-page">
+        <article className="payment-receipt" aria-labelledby="payment-receipt-title">
+          <p className="payment-receipt__status __error">
+            <span aria-hidden="true">✗</span>
+            Payment Cancelled
+          </p>
+          <h1 id="payment-receipt-title">Ticket receipt</h1>
+          <p className="payment-receipt__intro">Your booking has been cancelled.</p>
+
+          <dl className="payment-receipt__details">
+            <div>
+              <dt>Movie</dt>
+              <dd>{booking.movieTitle}</dd>
+            </div>
+            <div>
+              <dt>Screening</dt>
+              <dd>{formatScreeningDate(booking.screeningDate)}</dd>
+            </div>
+            <div>
+              <dt>Cinema</dt>
+              <dd>{booking.cinemaName}</dd>
+            </div>
+            <div>
+              <dt>Auditorium</dt>
+              <dd>{booking.auditoriumName || 'Details unavailable'}</dd>
+            </div>
+            <div>
+              <dt>Seats</dt>
+              <dd className="payment-receipt__seats">
+                {booking.seatIds.map((seat) => <span key={seat}>{seat}</span>)}
+              </dd>
+            </div>
+            <div>
+              <dt>Booking reference</dt>
+              <dd><code>{booking.id}</code></dd>
+            </div>
+            <div className="payment-receipt__total">
+              <dt>Total paid</dt>
+              <dd>{booking.totalAmountCents == null ? 'Unavailable' : formatAmount(booking.totalAmountCents)}</dd>
+            </div>
+          </dl>
+
+          <div className="payment-receipt__actions">
+            <Link to="/">Back to movies</Link>
+          </div>
+        </article>
+      </section>
+    );
   }
   if (loadError) return <p role="status">{loadError} Retrying payment confirmation...</p>;
-  return <p>Confirming your payment...</p>;
+
+  return (
+      <section className="payment-page">
+        <article className="payment-receipt" aria-labelledby="payment-receipt-title">
+          <p className="payment-receipt__status __pending">
+            <span aria-hidden="true">◑</span>
+            Confirming your payment
+          </p>
+          <h1 id="payment-receipt-title">Ticket receipt</h1>
+          <p className="payment-receipt__intro">Your booking is being processed</p>
+
+          <dl className="payment-receipt__details">
+            <div>
+              <dt>Movie</dt>
+              <dd>{booking.movieTitle}</dd>
+            </div>
+            <div>
+              <dt>Screening</dt>
+              <dd>{formatScreeningDate(booking.screeningDate)}</dd>
+            </div>
+            <div>
+              <dt>Cinema</dt>
+              <dd>{booking.cinemaName}</dd>
+            </div>
+            <div>
+              <dt>Auditorium</dt>
+              <dd>{booking.auditoriumName || 'Details unavailable'}</dd>
+            </div>
+            <div>
+              <dt>Seats</dt>
+              <dd className="payment-receipt__seats">
+                {booking.seatIds.map((seat) => <span key={seat}>{seat}</span>)}
+              </dd>
+            </div>
+            <div>
+              <dt>Booking reference</dt>
+              <dd><code>{booking.id}</code></dd>
+            </div>
+            <div className="payment-receipt__total">
+              <dt>Total paid</dt>
+              <dd>{booking.totalAmountCents == null ? 'Unavailable' : formatAmount(booking.totalAmountCents)}</dd>
+            </div>
+          </dl>
+
+          <div className="payment-receipt__actions">
+            <Link to="/">Back to movies</Link>
+          </div>
+        </article>
+      </section>
+    );
 }
 
 export function Cancel() {
