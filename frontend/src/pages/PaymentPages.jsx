@@ -45,7 +45,7 @@ export function Success() {
         <article className="payment-receipt" aria-labelledby="payment-receipt-title">
           <p className="payment-receipt__status __success">
             <span aria-hidden="true">✓</span>
-            Payment confirmed
+            Ticket confirmed
           </p>
           <h1 id="payment-receipt-title">Ticket receipt</h1>
           <p className="payment-receipt__intro">Your booking is confirmed. Keep this receipt for your visit.</p>
@@ -90,13 +90,14 @@ export function Success() {
       </section>
     );
   }
-   if (booking?.status === 'expired') {
+
+  if (booking?.status === 'expired') {
     return (
       <section className="payment-page">
         <article className="payment-receipt" aria-labelledby="payment-receipt-title">
           <p className="payment-receipt__status __error">
             <span aria-hidden="true">✗</span>
-            Payment Expired
+            Ticket expired
           </p>
           <h1 id="payment-receipt-title">Ticket receipt</h1>
           <p className="payment-receipt__intro">Your booking has expired.</p>
@@ -141,13 +142,14 @@ export function Success() {
       </section>
     );
   }
-  if(booking?.status === 'cancelled') {
+
+  if( booking?.status === 'cancelled') {
     return (
       <section className="payment-page">
         <article className="payment-receipt" aria-labelledby="payment-receipt-title">
           <p className="payment-receipt__status __error">
             <span aria-hidden="true">✗</span>
-            Payment Cancelled
+            Ticket cancelled
           </p>
           <h1 id="payment-receipt-title">Ticket receipt</h1>
           <p className="payment-receipt__intro">Your booking has been cancelled.</p>
@@ -192,6 +194,7 @@ export function Success() {
       </section>
     );
   }
+
   if (loadError) return <p role="status">{loadError} Retrying payment confirmation...</p>;
 
   return (
@@ -199,7 +202,7 @@ export function Success() {
         <article className="payment-receipt" aria-labelledby="payment-receipt-title">
           <p className="payment-receipt__status __pending">
             <span aria-hidden="true">◑</span>
-            Confirming your payment
+            Confirming ticket
           </p>
           <h1 id="payment-receipt-title">Ticket receipt</h1>
           <p className="payment-receipt__intro">Your booking is being processed.</p>
