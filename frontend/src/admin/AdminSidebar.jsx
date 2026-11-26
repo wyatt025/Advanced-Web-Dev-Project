@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { logout } from '../api/authApi'
 import rioLogo from '../images/Cinematic_RIO_Marquee_Logo.png'
-import './AdminSidebar.css'
+import '../components/AdminSidebar.css'
 
 function AdminSidebar({ session, sessionLoading, sessionError, onSessionChange }) {
   const navigate = useNavigate()

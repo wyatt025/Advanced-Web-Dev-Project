@@ -4,9 +4,9 @@ import {
   getAdminScreenings, getAdminScreening, getMovies, getOpenAuditoriums,
   checkAdminScreenings, createAdminScreenings, updateAdminScreening, deleteAdminScreening,
 } from '../api/adminApi.js'
-import { formatScreeningDate, screeningDateParts, screeningLocalInput } from './screeningDates.js'
-import { regularSeats, reservedRegularSeatCount } from './screeningAvailability.js'
-import './TicketPage.css'
+import { formatScreeningDate, screeningDateParts, screeningLocalInput } from '../pages/screeningDates.js'
+import { regularSeats, reservedRegularSeatCount } from '../pages/screeningAvailability.js'
+import '../pages/TicketPage.css'
 
 function ScreeningForm({ screening, movies, auditoriums, requestConfirmation, onCancel, onSaved, onDelete }) {
   const isEditing = Boolean(screening)
@@ -174,7 +174,7 @@ function ScreeningForm({ screening, movies, auditoriums, requestConfirmation, on
   )
 }
 
-function ScreeningDetails({ screening, onBack, onEdit, onMovie }) {
+function ScreeningDetails({ screening, onBack, onEdit, onMovie, onReservations }) {
   const seats = regularSeats(screening)
   const taken = new Set(screening.takenSeats)
   const rowCount = Math.ceil(seats.length / 10)
@@ -186,7 +186,7 @@ function ScreeningDetails({ screening, onBack, onEdit, onMovie }) {
       <div className="admin-detail-toolbar__actions">
         <button className="admin-action admin-action--gold" onClick={onMovie}>Movie details</button>
         <button className="admin-action admin-action--gold" onClick={onEdit}>Edit screening</button>
-        <button className="admin-action admin-action--gold" disabled title="Reservation management is coming later">View reservations</button>
+        <button className="admin-action admin-action--gold" onClick={onReservations}>View reservations</button>
       </div>
     </div>
     <div className={`movie-detail${screening.posterUrl ? '' : ' movie-detail--without-poster'}`}>
@@ -316,7 +316,7 @@ export default function AdminScreenings({ requestConfirmation }) {
           </li>
         })}</ul>}
     </section>}
-    {section === 'details' && selected && <ScreeningDetails screening={selected} onBack={() => setSection('list')} onEdit={() => setSection('edit')} onMovie={() => navigate('/admin/movies', { state: { movieId: selected.movieId } })} />}
+    {section === 'details' && selected && <ScreeningDetails screening={selected} onBack={() => setSection('list')} onEdit={() => setSection('edit')} onMovie={() => navigate('/admin/movies', { state: { movieId: selected.movieId } })} onReservations={() => navigate('/admin/reservations', { state: { screeningId: selected.id, screeningTitle: selected.title } })} />}
     {(section === 'add' || section === 'edit') && <ScreeningForm key={section === 'edit' ? selected.id : 'add'} screening={section === 'edit' ? selected : null} movies={movies} auditoriums={auditoriums} requestConfirmation={requestConfirmation} onDelete={requestDelete}
       onCancel={() => requestConfirmation({ kind: 'cancel', title: 'Discard your changes?', onConfirm: () => { setError(''); setSection(section === 'edit' ? 'details' : 'list') } })}
       onSaved={(edited) => { setSection('list'); setSelected(null); setNotice(edited ? 'Screening updated.' : 'Screenings added.'); setRevision((value) => value + 1) }} />}

@@ -148,6 +148,20 @@
 .admin-screening-queue { max-height: 240px; }
 .admin-screening-form__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 .ticket-seat.admin-screening-seat { display: grid; place-items: center; cursor: default; }
+.admin-reservation-row { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(120px, 1.2fr) minmax(120px, 1.2fr) minmax(80px, .7fr) auto auto; gap: 14px; }
+.admin-reservation-row > span { font-size: 13px; overflow-wrap: anywhere; }
+.admin-reservation-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-reservation-status { border: 1px solid #75643f; border-radius: 6px; padding: 6px; }
+.admin-reservation-status--paid { color: #80cf6a; border-color: #57a643; }
+.admin-reservation-status--unpaid, .admin-reservation-status--pending_payment { color: #e4c555; border-color: #a58a32; }
+.admin-reservation-status--cancelled, .admin-reservation-status--expired { color: #ec8888; border-color: #c62828; }
+.admin-reservation-form h1 { line-height: 1.2; }
+.admin-reservation-form .admin-screening-form__fields > .admin-action { justify-self: start; }
+.admin-reservation-search-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 200px; overflow-y: auto; }
+@media (max-width: 900px) {
+  .admin-reservation-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-reservation-row .admin-movies__actions { grid-column: 1 / -1; }
+}
 
 .admin-confirmation {
   width: min(420px, calc(100% - 32px));

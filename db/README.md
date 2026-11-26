@@ -23,6 +23,19 @@ For existing databases, apply `migrations/20261120_add_booking_receipt_total.sql
 once as a database administrator before deploying the receipt update. It stores
 the charged total so the receipt reflects the amount paid at checkout.
 
+# Admin reservations deployment
+
+For existing databases, apply `migrations/20261126_admin_reservations.sql`
+once as a database administrator after the checkout migrations and before
+deploying the admin reservations feature. This adds customer contact fields
+and an unpaid booking status, updates the taken-seat view, and grants the
+admin role the booking permissions required by the feature. Fresh databases
+receive these changes from `init.sql`.
+
+Admin-created reservations hold seats as unpaid bookings. Pending-payment
+bookings cannot be deleted from the admin interface. Deleting a paid booking
+does not issue a refund or notify the customer.
+
 Configure these backend environment variables in Rahti:
 
 - `STRIPE_SECRET_KEY`

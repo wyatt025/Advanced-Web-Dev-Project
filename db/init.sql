@@ -80,8 +80,10 @@ CREATE TABLE IF NOT EXISTS `ticket_bookings` (
   `screening_id` INT NOT NULL,
   `user_id` INT NULL,
   `email` VARCHAR(254) NOT NULL,
+  `customer_name` VARCHAR(255) NULL,
+  `customer_phone` VARCHAR(50) NULL,
   `total_amount_cents` INT NULL,
-  `status` ENUM('pending_payment','paid','expired','cancelled') NOT NULL,
+  `status` ENUM('pending_payment','paid','expired','cancelled','unpaid') NOT NULL,
   `hold_expires_at` DATETIME NOT NULL,
   `stripe_checkout_session_id` VARCHAR(255) NULL UNIQUE,
   `stripe_payment_intent_id` VARCHAR(255) NULL,
@@ -143,6 +145,7 @@ FROM reservations r
 LEFT JOIN ticket_bookings b ON b.id = r.booking_id
 WHERE r.booking_id IS NULL
    OR r.isPaid = TRUE
+   OR b.status = 'unpaid'
    OR (b.status = 'pending_payment' AND b.hold_expires_at > UTC_TIMESTAMP());
 
 -- ============================================================
@@ -178,6 +181,8 @@ GRANT INSERT, UPDATE, DELETE ON riocinemadb.movies      TO 'role_admin';
 GRANT INSERT, UPDATE, DELETE ON riocinemadb.screenings  TO 'role_admin';
 GRANT INSERT, UPDATE, DELETE ON riocinemadb.cinemas     TO 'role_admin';
 GRANT INSERT, UPDATE, DELETE ON riocinemadb.auditoriums TO 'role_admin';
+GRANT SELECT, INSERT, DELETE ON riocinemadb.ticket_bookings TO 'role_admin';
+GRANT UPDATE (status) ON riocinemadb.ticket_bookings TO 'role_admin';
 
 -- Auth: password lookup, registration, and ticket payment processing.
 GRANT 'role_public' TO 'role_auth';
