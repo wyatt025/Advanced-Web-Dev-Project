@@ -33,7 +33,7 @@ module.exports = {
     async list() {
         const [rows] = await pools.admin.execute(
             `SELECT b.id, 'booking' AS kind, b.status, b.email, s.id AS screeningId, b.created_at AS createdAt,
-                COALESCE(b.customer_name, u.name) AS customerName,
+                COALESCE(b.customer_name, u.username) AS customerName,
                 COALESCE(b.customer_phone, u.phone) AS customerPhone,
                 m.title, c.name AS cinema, a.name AS auditorium,
                 CONCAT(DATE_FORMAT(s.date, '%Y-%m-%dT%H:%i:%s'), 'Z') AS screeningDate,
@@ -47,7 +47,7 @@ module.exports = {
              LEFT JOIN reservations r ON r.booking_id = b.id
              UNION ALL
              SELECT r.id, 'seat', IF(r.isPaid, 'paid', 'unpaid'), u.email, s.id, r.created_at,
-                u.name, u.phone, m.title, c.name, a.name,
+                u.username, u.phone, m.title, c.name, a.name,
                 CONCAT(DATE_FORMAT(s.date, '%Y-%m-%dT%H:%i:%s'), 'Z'), r.seatNumber
              FROM reservations r
              JOIN screenings s ON s.id = r.screening_id
@@ -71,9 +71,9 @@ module.exports = {
     },
     async searchUsers(query) {
         const [rows] = await pools.admin.execute(
-            `SELECT id, name, email, phone FROM users
-             WHERE role = 'user' AND (LOCATE(?, name) > 0 OR LOCATE(?, email) > 0)
-             ORDER BY name, id LIMIT 20`, [query, query]
+            `SELECT id, username AS name, email, phone FROM users
+             WHERE role = 'user' AND (LOCATE(?, username) > 0 OR LOCATE(?, email) > 0)
+             ORDER BY username, id LIMIT 20`, [query, query]
         );
         return rows;
     },

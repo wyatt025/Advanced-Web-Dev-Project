@@ -29,8 +29,14 @@ For existing databases, apply `migrations/20261126_admin_reservations.sql`
 once as a database administrator after the checkout migrations and before
 deploying the admin reservations feature. This adds customer contact fields
 and an unpaid booking status, updates the taken-seat view, and grants the
-admin role the booking permissions required by the feature. Fresh databases
-receive these changes from `init.sql`.
+admin role the booking permissions required by the feature.
+
+The reservation list and customer search use `users.username` as the account
+name and require the admin database role to have SELECT access to that column.
+The deployed database uses `username`, but the `users` definition in `init.sql`
+currently uses `name` instead. A fresh database created from that definition
+therefore needs its user schema and privileges reconciled before using this
+feature; do not apply the existing-database migration to a fresh database.
 
 Admin-created reservations hold seats as unpaid bookings. Pending-payment
 bookings cannot be deleted from the admin interface. Deleting a paid booking

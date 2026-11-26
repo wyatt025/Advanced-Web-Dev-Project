@@ -22,7 +22,7 @@ const connection = {
 };
 require.cache[dbPath] = {
     id: dbPath, filename: dbPath, loaded: true,
-    exports: { admin: { getConnection: async () => connection, execute: async (sql) => { calls.push({ sql }); return [listRows]; } } },
+    exports: { admin: { getConnection: async () => connection, execute: async (sql, params) => { calls.push({ sql, params }); return [listRows]; } } },
 };
 const model = require('../models/adminReservations_model');
 beforeEach(() => { calls = []; bookingStatus = 'unpaid'; taken = false; listRows = []; });
@@ -73,6 +73,17 @@ test('groups seats by booking while preserving standalone reservations', async (
         { id: '4', kind: 'seat', status: 'unpaid', seats: [5] },
         { id: 'expired', kind: 'booking', status: 'expired', seats: [] },
     ]);
+    assert.ok(calls[0].sql.includes('COALESCE(b.customer_name, u.username) AS customerName'));
+    assert.ok(calls[0].sql.includes('u.username, u.phone'));
+});
+
+test('searches registered customers by username and returns it as name', async () => {
+    listRows = [{ id: 2, name: 'customer', email: 'customer@example.com', phone: null }];
+    assert.deepEqual(await model.searchUsers('customer'), listRows);
+    assert.ok(calls[0].sql.includes('username AS name'));
+    assert.ok(calls[0].sql.includes('LOCATE(?, username)'));
+    assert.ok(calls[0].sql.includes('ORDER BY username, id'));
+    assert.deepEqual(calls[0].params, ['customer', 'customer']);
 });
 
 test('orders bookings and standalone reservations by creation time, newest first', async () => {
