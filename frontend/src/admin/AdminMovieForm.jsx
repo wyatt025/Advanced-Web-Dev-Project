@@ -6,7 +6,7 @@ import {
   getExternalMovieDetails,
   getOpenAuditoriums,
 } from '../api/adminApi'
-import './AdminDashboard.css'
+import '../pages/AdminDashboard.css'
 
 const emptyMovie = {
   imdb_id: '',

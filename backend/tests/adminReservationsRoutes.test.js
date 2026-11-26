@@ -1,0 +1,45 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+
+process.env.JWT_SECRET = 'test-secret';
+const dbPath = require.resolve('../helpers/db');
+require.cache[dbPath] = {
+    id: dbPath, filename: dbPath, loaded: true,
+    exports: { auth: { execute: async (_, [id]) => [[{ id, role: id === 1 ? 'admin' : 'user' }]] } },
+};
+let received;
+const modelPath = require.resolve('../models/adminReservations_model');
+require.cache[modelPath] = {
+    id: modelPath, filename: modelPath, loaded: true,
+    exports: {
+        list: async () => [],
+        create: async (value) => { received = value; return { id: 'booking' }; },
+    },
+};
+const { adminRouter } = require('../routes/adminRoute');
+const app = express();
+app.use(express.json());
+app.use(cookieParser());
+app.use('/admin', adminRouter);
+
+test('reservation routes require admin and validate booking inputs', async (t) => {
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise((resolve) => server.once('listening', resolve));
+    t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+    const base = `http://127.0.0.1:${server.address().port}/admin/reservations`;
+    const cookie = (id) => `authToken=${jwt.sign({ id }, process.env.JWT_SECRET)}`;
+    assert.equal((await fetch(base)).status, 401);
+    assert.equal((await fetch(base, { headers: { Cookie: cookie(2) } })).status, 403);
+    assert.deepEqual(await (await fetch(base, { headers: { Cookie: cookie(1) } })).json(), []);
+    const post = (body) => fetch(base, {
+        method: 'POST', headers: { Cookie: cookie(1), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    assert.equal((await post({ name: '', email: 'bad', screeningId: 1, seats: [] })).status, 400);
+    const response = await post({ name: ' Guest ', email: 'guest@example.com', screeningId: 1, seats: [1] });
+    assert.equal(response.status, 201);
+    assert.deepEqual(received, { name: 'Guest', email: 'guest@example.com', phone: null, userId: null, screeningId: 1, seats: [1] });
+});

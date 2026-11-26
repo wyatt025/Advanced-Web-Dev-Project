@@ -1,5 +1,5 @@
 import { Link, Navigate, useLocation } from 'react-router-dom'
-import AdminDashboard from '../pages/AdminDashboard.jsx'
+import AdminDashboard from './AdminDashboard.jsx'
 
 function AdminRoute({ session, sessionLoading, sessionError }) {
   const location = useLocation()

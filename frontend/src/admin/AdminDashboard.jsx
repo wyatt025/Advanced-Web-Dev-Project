@@ -3,8 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { deleteMovie, getDashboardMetrics, getMovies } from '../api/adminApi'
 import AdminMovieForm from './AdminMovieForm.jsx'
 import AdminScreenings from './AdminScreenings.jsx'
-import './AdminDashboard.css'
-import './MoviePage.css'
+import AdminReservations from './AdminReservations.jsx'
+import '../pages/AdminDashboard.css'
+import '../pages/MoviePage.css'
 
 const metrics = [
   ['movies', 'Total movies'],
@@ -74,6 +75,7 @@ function AdminDashboard() {
   const navigate = useNavigate()
   const isMovies = pathname === '/admin/movies' || pathname === '/admin/movies/'
   const isScreenings = pathname === '/admin/screenings' || pathname === '/admin/screenings/'
+  const isReservations = pathname === '/admin/reservations' || pathname === '/admin/reservations/'
   const isDashboard = pathname === '/admin' || pathname === '/admin/'
   const [section, setSection] = useState('list')
   const [selected, setSelected] = useState(null)
@@ -268,7 +270,8 @@ function AdminDashboard() {
         </>
       )}
       {isScreenings && <AdminScreenings requestConfirmation={setConfirmation} />}
-      {!isDashboard && !isMovies && !isScreenings && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
+      {isReservations && <AdminReservations requestConfirmation={setConfirmation} />}
+      {!isDashboard && !isMovies && !isScreenings && !isReservations && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
       {confirmation && <ConfirmationDialog confirmation={confirmation} onDismiss={() => setConfirmation(null)} />}
     </main>
   )
