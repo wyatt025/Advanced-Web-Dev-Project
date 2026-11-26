@@ -1,17 +1,23 @@
+import { useEffect, useState } from 'react'
+import { getRegisteredProfile } from '../api/authApi.js'
 import './UserPage.css'
 
-const ticketHistory = [
-  {
-    id: 'ticket-1',
-    movie: 'Example movie',
-    date: '12 December 2026 · 18:30',
-    location: 'Oulu',
-    auditorium: 1,
-    seats: '12, 14',
-  },
-]
-
 function UserPage() {
+  const [profile, setProfile] = useState(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getRegisteredProfile(controller.signal)
+      .then(setProfile)
+      .catch((loadError) => {
+        if (!controller.signal.aborted) {
+          setError(loadError.message || 'Could not load your account details.')
+        }
+      })
+    return () => controller.abort()
+  }, [])
+
   return (
     <main className="user-page">
       <header className="user-page__heading">
@@ -19,33 +25,15 @@ function UserPage() {
         <h1>My account</h1>
       </header>
 
-      <section className="user-panel" aria-labelledby="user-email-title">
-        <h2 id="user-email-title">Email address</h2>
-        <p className="user-page__email">user@example.com</p>
-      </section>
-
-      <section className="user-panel" aria-labelledby="ticket-history-title">
-        <div className="user-panel__heading">
-          <div>
-            <h2 id="ticket-history-title">Ticket history</h2>
-          </div>
-          <span className="user-page__placeholder">Placeholder data</span>
-        </div>
-        <div className="user-ticket-list">
-          {ticketHistory.map((ticket) => (
-            <article className="user-ticket" key={ticket.id}>
-              <div className="user-ticket__movie">
-                <h3>{ticket.movie}</h3>
-                <p>{ticket.date}</p>
-              </div>
-              <div className="user-ticket__details">
-                <span>{ticket.location}</span>
-                <span>Auditorium {ticket.auditorium}</span>
-                <span>Seat{ticket.seats.includes(',') ? 's' : ''} {ticket.seats}</span>
-              </div>
-            </article>
-          ))}
-        </div>
+      <section className="user-panel" aria-labelledby="user-username-title">
+        <h2 id="user-username-title">Username</h2>
+        {error ? (
+          <p role="alert">{error}</p>
+        ) : profile ? (
+          <p className="user-page__email">{profile.username}</p>
+        ) : (
+          <p role="status">Loading account...</p>
+        )}
       </section>
     </main>
   )

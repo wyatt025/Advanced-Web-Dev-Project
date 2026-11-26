@@ -16,6 +16,23 @@ export async function login(username, password) {
     }
     return response.json();
 }
+
+export async function register(username, password) {
+    const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+        throw new Error(data?.error || 'Registration is unavailable. Please try again.');
+    }
+    return data;
+}
+
 export async function logout() {
     const response = await fetch('/api/auth/logout', {
         method: 'POST',
@@ -26,6 +43,19 @@ export async function logout() {
         throw new Error('Logout failed. Please try again.');
     }
 }
+
+export async function getRegisteredProfile(signal) {
+    const response = await fetch('/api/user/', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        signal,
+    });
+    if (!response.ok) {
+        throw new Error('Could not load your account details.');
+    }
+    return response.json();
+}
+
 export async function getCurrentSession(signal) {
     const response = await fetch('/api/auth/me',{
         cache: 'no-store',

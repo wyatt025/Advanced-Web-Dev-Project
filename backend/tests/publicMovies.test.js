@@ -4,6 +4,8 @@ const assert = require('node:assert/strict');
 const dbPath = require.resolve('../helpers/db');
 let queryRows = [];
 let lastQuery;
+let profileRows = [];
+let profileQuery;
 require.cache[dbPath] = {
     id: dbPath,
     filename: dbPath,
@@ -13,6 +15,12 @@ require.cache[dbPath] = {
             execute: async (sql, params) => {
                 lastQuery = { sql, params };
                 return [queryRows];
+            },
+        },
+        registered: {
+            execute: async (sql, params) => {
+                profileQuery = { sql, params };
+                return [profileRows];
             },
         },
     },
@@ -48,4 +56,15 @@ test('groups screenings by movie and includes only public taken-seat data', asyn
     const details = await userModel.getPublicMovie(3);
     assert.equal(details.length, 1);
     assert.deepEqual(lastQuery.params, [3]);
+});
+
+test('loads only the authenticated customer profile through the registered pool', async () => {
+    profileRows = [{ id: 8, username: 'customer8' }];
+
+    assert.deepEqual(await userModel.getRegisteredProfile(8), profileRows[0]);
+    assert.equal(profileQuery.sql, 'SELECT id, username FROM users WHERE id = ?');
+    assert.deepEqual(profileQuery.params, [8]);
+
+    profileRows = [];
+    assert.equal(await userModel.getRegisteredProfile(99), null);
 });

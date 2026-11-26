@@ -2,7 +2,7 @@ const pools = require('../helpers/db');
 const { MovieValidationError } = require('../helpers/validateMovie');
 const { checkScreeningAvailability } = require('../helpers/screeningAvailability');
 
-const userFields = 'id, name, email, phone, role, created_at';
+const userFields = 'id, username, name, email, phone, role, created_at';
 const movieFields = [
     'price', 'imdb_id', 'title', 'release_year', 'rated', 'released_date',
     'runtime_minutes', 'coming_soon', 'genre', 'director', 'writer', 'actors', 'plot',
@@ -26,9 +26,10 @@ async function getUserById(id, role) {
 
 async function createUser(user, role) {
     // DB schema: role_admin lacks user INSERT privileges; this uses role_auth.
+    const username = user.username || user.email;
     const [result] = await pools.auth.execute(
-        'INSERT INTO users (name, email, phone, password, role) VALUES (?, ?, ?, ?, ?)',
-        [user.name, user.email, user.phone ?? null, user.password, role]
+        'INSERT INTO users (username, name, email, phone, password, role) VALUES (?, ?, ?, ?, ?, ?)',
+        [username, user.name, user.email, user.phone ?? null, user.password, role]
     );
     return getUserById(result.insertId, role);
 }

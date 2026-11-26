@@ -9,9 +9,10 @@ async function login(req, res) {
         typeof password !== 'string' || !password) {
         return res.status(400).json({ error: 'Username and password are required' });
     }
+    const normalizedUsername = username.trim();
 
     try {
-        const user = await getAccountForLogin(username);
+        const user = await getAccountForLogin(normalizedUsername);
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }

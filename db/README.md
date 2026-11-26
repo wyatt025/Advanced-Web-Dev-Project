@@ -23,6 +23,22 @@ For existing databases, apply `migrations/20261120_add_booking_receipt_total.sql
 once as a database administrator before deploying the receipt update. It stores
 the charged total so the receipt reflects the amount paid at checkout.
 
+# Customer accounts
+
+The app authenticates accounts by username. Registration inserts only
+`username` and a bcrypt password hash through the backend's `app_auth`
+connection; MySQL supplies the default `user` role. For an existing CSC Rahti
+database, apply `migrations/20261126_customer_accounts.sql` once as a database
+administrator before deploying the account update. The migration grants
+`role_registered` the public browsing role plus read access to its account
+identifier, and activates that role for `app_registered`. It expects the
+existing database's `users.username` column, which the deployed auth account
+already uses; new databases receive the aligned schema from `init.sql`.
+
+Set `APP_REGISTERED_PASS` in the backend deployment to the database password
+for `app_registered`. Login and registration continue to use the existing
+`APP_AUTH_PASS` connection; the frontend never connects directly to MySQL.
+
 # Admin reservations deployment
 
 For existing databases, apply `migrations/20261126_admin_reservations.sql`
@@ -33,10 +49,6 @@ admin role the booking permissions required by the feature.
 
 The reservation list and customer search use `users.username` as the account
 name and require the admin database role to have SELECT access to that column.
-The deployed database uses `username`, but the `users` definition in `init.sql`
-currently uses `name` instead. A fresh database created from that definition
-therefore needs its user schema and privileges reconciled before using this
-feature; do not apply the existing-database migration to a fresh database.
 
 Admin-created reservations hold seats as unpaid bookings. Pending-payment
 bookings cannot be deleted from the admin interface. Deleting a paid booking
@@ -48,7 +60,7 @@ Configure these backend environment variables in Rahti:
 - `STRIPE_WEBHOOK_SECRET`
 - `PUBLIC_URL` (the public frontend origin)
 - `FRONTEND_ORIGIN` (the same public frontend origin)
-- `APP_AUTH_PASS` and the existing database connection variables
+- `APP_AUTH_PASS`, `APP_REGISTERED_PASS`, and the existing database connection variables
 
 Register the Stripe webhook at
 `https://<frontend-origin>/api/stripe/webhook` for Checkout events

@@ -2,7 +2,6 @@ const express = require('express');
 const userRouter = express.Router();
 const userModel = require('../models/user_model');
 const { authenticate, requireRole } = require('../middleware/token&roleAuth');
-const bcrypt = require('bcrypt'); 
 
 /*
 There needs to be routes for guest such as:
@@ -44,33 +43,19 @@ userRouter.get('/movies/:id', async (req, res) => {
     }
 });
 
-userRouter.post('/purchase', (req, res) => {
-    // Logic to handle ticket purchase
-    res.send("Ticket purchased successfully");
-});
-
-userRouter.post('/register', async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
-        if (!name || !email || !password) {
-            return res.status(400).json({ error: 'Name, email and password are required' });
-        }
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const userData = { name, email, password: hashedPassword };
-        const result = await userModel.createUser(userData);
-        res.status(201).json(result);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
 //---- Routes for registered users --------
 userRouter.use(authenticate);
-userRouter.use(requireRole('user'));
+userRouter.use(requireRole('user', 'admin'));
 
-userRouter.get('/', (req, res) => {
-    res.send("User Router Working");
+userRouter.get('/', async (req, res) => {
+    try {
+        const profile = await userModel.getRegisteredProfile(req.user.id);
+        if (!profile) return res.status(404).json({ error: 'Account no longer exists' });
+        return res.json(profile);
+    } catch (error) {
+        console.error('Registered profile lookup failed:', error.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not load your account' });
+    }
 });
 
 module.exports = userRouter;

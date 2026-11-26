@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getCurrentSession, login } from '../api/authApi'
+import { getCurrentSession, login, register } from '../api/authApi'
 import './LoginPage.css'
 
 function LoginPage({ onSessionChange }) {
@@ -28,18 +28,19 @@ function LoginPage({ onSessionChange }) {
       return
     }
 
-    if (isRegistering) {
-      setStatus("Registration isn't connected to an account service yet. Your details haven't been sent.")
-      return
-    }
-
     setStatus('')
     setIsSubmitting(true)
     try {
-      await login(formData.get('username'), formData.get('password'))
+      const username = formData.get('username')
+      const password = formData.get('password')
+      if (isRegistering) {
+        await register(username, password)
+      } else {
+        await login(username, password)
+      }
       const session = await getCurrentSession();
       if (!session) {
-        throw new Error('Login succeeded, but the session could not be established.')
+        throw new Error('Authentication succeeded, but the session could not be established.')
       }
       onSessionChange(session);
       navigate(session.role === 'admin' ? '/admin' : '/')
@@ -92,38 +93,21 @@ function LoginPage({ onSessionChange }) {
             onSubmit={handleSubmit}
             aria-labelledby={isRegistering ? 'register-tab' : 'login-tab'}
           >
-            {isRegistering && (
-              <label>
-                Name
-                <input
-                  type="text"
-                  name="name"
-                  autoComplete="name"
-                  required
-                />
-              </label>
-            )}
-            {isRegistering ? (
-              <label>
-                Email address
-                <input
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  required
-                />
-              </label>
-            ) : (
-              <label>
-                Username
-                <input
-                  type="text"
-                  name="username"
-                  autoComplete="username"
-                  required
-                />
-              </label>
-            )}
+            <label>
+              Username
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                minLength={isRegistering ? 3 : undefined}
+                maxLength={32}
+                pattern={isRegistering ? '[A-Za-z0-9._-]{3,32}' : undefined}
+                title={isRegistering
+                  ? 'Use 3–32 letters, numbers, dots, underscores or hyphens.'
+                  : undefined}
+                required
+              />
+            </label>
             <label>
               Password
               <span className="account-form__password">
@@ -166,7 +150,9 @@ function LoginPage({ onSessionChange }) {
             )}
 
             <button className="account-form__submit" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Logging in...' : isRegistering ? 'Continue to authentication' : 'Log in'}
+              {isSubmitting
+                ? (isRegistering ? 'Creating account...' : 'Logging in...')
+                : (isRegistering ? 'Create account' : 'Log in')}
               <span aria-hidden="true">→</span>
             </button>
             <p className="account-form__status" role="status" aria-live="polite">

@@ -5,6 +5,7 @@ const { checkOrigin } = require('./middleware/checkOrigin');
 const { adminRouter } = require('./routes/adminRoute');
 const userRouter = require('./routes/userRoute');
 const { login } = require('./middleware/login');
+const { register } = require('./middleware/register');
 const { authCookieOptions } = require('./middleware/authCookie');
 const { authenticate } = require('./middleware/token&roleAuth');
 const stripeRouter = require('./routes/stripeRoutes');
@@ -21,6 +22,7 @@ const pools = require('./helpers/db');
 
 
 app.post('/auth/login', login);
+app.post('/auth/register', register);
 app.post('/auth/logout', (req, res) => {
     res.clearCookie('authToken', authCookieOptions);
     return res.status(204).end();

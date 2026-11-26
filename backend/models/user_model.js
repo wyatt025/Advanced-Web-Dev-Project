@@ -106,11 +106,12 @@ const userModel = {
         );
         return groupPublicMovieRows(rows);
     },
-    createUser: async (userData) => {
-        const { name, email, password } = userData;
-        const query = 'INSERT INTO users (name, email, password) VALUES (?, ?, ?)';
-        const [result] = await pools.auth.execute(query, [name, email, password]);
-        return { id: result.insertId, name, email };
+    getRegisteredProfile: async (userId) => {
+        const [rows] = await pools.registered.execute(
+            'SELECT id, username FROM users WHERE id = ?',
+            [userId]
+        );
+        return rows[0] || null;
     },
 };
 

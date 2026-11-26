@@ -7,4 +7,12 @@ async function getAccountForLogin(username) {
     return rows[0];
 }
 
-module.exports = { getAccountForLogin };
+async function createRegisteredAccount(username, passwordHash) {
+    const [result] = await pools.auth.execute(
+        'INSERT INTO users (username, password) VALUES (?, ?)',
+        [username, passwordHash]
+    );
+    return { id: result.insertId, role: 'user' };
+}
+
+module.exports = { getAccountForLogin, createRegisteredAccount };
