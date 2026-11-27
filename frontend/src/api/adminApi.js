@@ -143,3 +143,25 @@ export const createAdminReservation = (booking) => reservationRequest('', {
 export const deleteAdminReservation = (booking) => reservationRequest(`/${booking.kind}/${encodeURIComponent(booking.id)}`, {
     method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: booking.status }),
 });
+
+async function userRequest(path = '', options = {}) {
+    const response = await fetch(`/api/admin/users${path}`, { cache: 'no-store', ...options });
+    if (!response.ok) {
+        if (response.status === 401) throw new Error('Your session has expired. Please log in again.');
+        if (response.status === 403) throw new Error('Admin access is required, or the request origin is not allowed.');
+        if ((response.headers.get('content-type') || '').includes('application/json')) {
+            const body = await response.json();
+            if (typeof body.error === 'string') throw new Error(body.error);
+        }
+        throw new Error(`Could not manage users (HTTP ${response.status}).`);
+    }
+    return response.json();
+}
+export const getAdminUsers = () => userRequest();
+export const createAdminUser = (user) => userRequest('', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user),
+});
+export const updateAdminUser = (id, user) => userRequest(`/${encodeURIComponent(id)}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user),
+});
+export const deleteAdminUser = (id) => userRequest(`/${encodeURIComponent(id)}`, { method: 'DELETE' });

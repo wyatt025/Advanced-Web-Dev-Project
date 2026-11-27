@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import {
   getAdminReservations, searchReservationUsers, createAdminReservation, deleteAdminReservation,
@@ -50,6 +50,9 @@ function ReservationForm({ requestConfirmation, onCancel, onSaved }) {
   const [users, setUsers] = useState([])
   const [searchedUsers, setSearchedUsers] = useState(false)
   const [search, setSearch] = useState('')
+  const [showScreenings, setShowScreenings] = useState(false)
+  const searchInput = useRef(null)
+  const screeningListId = useId()
   const [screenings, setScreenings] = useState([])
   const [screening, setScreening] = useState(null)
   const [seats, setSeats] = useState([])
@@ -119,13 +122,35 @@ function ReservationForm({ requestConfirmation, onCancel, onSaved }) {
       <label className="admin-field">Customer name<input required maxLength={255} value={name} onChange={(event) => { setName(event.target.value); setUserId(null) }} /></label>
       <label className="admin-field">Email<input required type="email" maxLength={254} value={email} onChange={(event) => { setEmail(event.target.value); setUserId(null) }} /></label>
       <label className="admin-field">Phone (optional)<input type="tel" maxLength={50} value={phone} onChange={(event) => { setPhone(event.target.value); setUserId(null) }} /></label>
-      <label className="admin-field">Search movies or locations<input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Movie, cinema or theater" /></label>
-      <label className="admin-field">Screening
-        <select value={screening?.id || ''} disabled={loadingScreenings} onChange={(event) => selectScreening(event.target.value)}>
-          <option value="">{loadingScreenings ? 'Loading screenings...' : 'Select a screening'}</option>
-          {matching.map((item) => <option value={item.id} key={item.id}>{item.title} — {formatScreeningDate(item.date)} — {item.auditorium}, {item.cinema}</option>)}
-        </select>
-      </label>
+      <div className="admin-reservation-screening-picker">
+        <div className="admin-reservation-screening-picker__controls">
+          <label className="admin-field">Search movies or locations
+            <input ref={searchInput} type="search" value={search} disabled={loadingScreenings}
+              onChange={(event) => {
+                setSearch(event.target.value); setShowScreenings(true)
+                setScreening(null); setSeats([])
+              }}
+              onKeyDown={(event) => { if (event.key === 'Escape') setShowScreenings(false) }}
+              placeholder="Movie, cinema or theater" />
+          </label>
+          <button type="button" className="admin-action admin-action--gold" disabled={loadingScreenings}
+            aria-expanded={showScreenings} aria-controls={screeningListId}
+            onClick={() => {
+              if (!showScreenings) setSearch('')
+              setShowScreenings(!showScreenings)
+            }}>{showScreenings ? 'Close list' : 'Browse screenings'}</button>
+        </div>
+        {loadingScreenings && <p role="status">Loading screenings...</p>}
+        <div id={screeningListId} hidden={!showScreenings}>
+          <p role="status">{matching.length === 0 ? 'No screenings match your search.' : `${matching.length} ${matching.length === 1 ? 'screening' : 'screenings'} available.`}</p>
+          {matching.length > 0 && <ul className="admin-reservation-screening-results">
+            {matching.map((item) => <li key={item.id}><button type="button" onClick={() => {
+              setSearch(item.title); setShowScreenings(false); searchInput.current?.focus(); selectScreening(item.id)
+            }}>{item.title} — {formatScreeningDate(item.date)} — {item.auditorium}, {item.cinema}</button></li>)}
+          </ul>}
+        </div>
+        {screening && <p>Selected screening: {screening.title} — {formatScreeningDate(screening.date)} — {screening.auditorium}, {screening.cinema}</p>}
+      </div>
       {screening && <SeatPicker screening={screening} selected={seats} onChange={setSeats} />}
       <p>Selected seats: {seats.join(', ') || 'none'}</p>
       <div className="admin-screening-form__actions">
