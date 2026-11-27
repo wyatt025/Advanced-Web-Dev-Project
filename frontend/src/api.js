@@ -3,6 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 export async function startCheckout(payload) {
   const res = await fetch(API_URL + '/api/checkout-sessions', {
     method: 'POST',
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });

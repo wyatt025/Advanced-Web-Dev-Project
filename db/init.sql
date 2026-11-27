@@ -165,7 +165,10 @@ GRANT SELECT ON riocinemadb.screenings          TO 'role_public';
 
 -- Registered: all public access plus the account's own identifier (enforced by the API query).
 GRANT 'role_public' TO 'role_registered';
-GRANT SELECT (id, username) ON riocinemadb.users TO 'role_registered';
+GRANT SELECT (id, username, email) ON riocinemadb.users TO 'role_registered';
+GRANT SELECT (id, screening_id, user_id, total_amount_cents, status, paid_at)
+  ON riocinemadb.ticket_bookings TO 'role_registered';
+GRANT SELECT (booking_id, seatNumber, isPaid) ON riocinemadb.reservations TO 'role_registered';
 -- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_profile        TO 'role_registered';
 -- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_update_my_name    TO 'role_registered';
 -- GRANT EXECUTE ON PROCEDURE riocinemadb.sp_get_my_reservations   TO 'role_registered';
@@ -189,7 +192,7 @@ GRANT UPDATE (status) ON riocinemadb.ticket_bookings TO 'role_admin';
 -- Auth: password lookup, registration, and ticket payment processing.
 GRANT 'role_public' TO 'role_auth';
 GRANT UPDATE ON riocinemadb.screenings TO 'role_auth';
-GRANT SELECT (id, username, password, role) ON riocinemadb.users TO 'role_auth';
+GRANT SELECT (id, username, password, role, email) ON riocinemadb.users TO 'role_auth';
 GRANT INSERT (username, name, password, email, phone, role) ON riocinemadb.users TO 'role_auth';
 GRANT UPDATE (password, phone, email, name) ON riocinemadb.users TO 'role_auth';
 GRANT SELECT (id, auditorium_id, screening_id, seatNumber, isPaid, booking_id)

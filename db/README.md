@@ -26,18 +26,21 @@ the charged total so the receipt reflects the amount paid at checkout.
 # Customer accounts
 
 The app authenticates accounts by username. Registration inserts only
-`username` and a bcrypt password hash through the backend's `app_auth`
+`username`, email, and a bcrypt password hash through the backend's `app_auth`
 connection; MySQL supplies the default `user` role. For an existing CSC Rahti
-database, apply `migrations/20261126_customer_accounts.sql` once as a database
-administrator before deploying the account update. The migration grants
-`role_registered` the public browsing role plus read access to its account
-identifier, and activates that role for `app_registered`. It expects the
-existing database's `users.username` column, which the deployed auth account
-already uses; new databases receive the aligned schema from `init.sql`.
+database, apply `migrations/20261126_customer_accounts.sql` and then
+`migrations/20261127_account_email_tickets.sql` once as a database administrator
+before deploying the account and ticket-history update. The latter grants the
+registered role access to its account email and paid bookings, and lets the
+auth role read the email and save it at registration. It expects the
+`users.email` and ticket-booking columns from `init.sql` and the existing
+checkout migrations.
 
 Set `APP_REGISTERED_PASS` in the backend deployment to the database password
 for `app_registered`. Login and registration continue to use the existing
 `APP_AUTH_PASS` connection; the frontend never connects directly to MySQL.
+Registered accounts use their saved email for checkout, and paid ticket bookings
+are associated with their account and shown on the account page.
 
 # Admin reservations deployment
 

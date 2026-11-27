@@ -6,6 +6,7 @@ let queryRows = [];
 let lastQuery;
 let profileRows = [];
 let profileQuery;
+let ticketQuery;
 require.cache[dbPath] = {
     id: dbPath,
     filename: dbPath,
@@ -19,6 +20,10 @@ require.cache[dbPath] = {
         },
         registered: {
             execute: async (sql, params) => {
+                if (sql.includes('FROM ticket_bookings')) {
+                    ticketQuery = { sql, params };
+                    return [[]];
+                }
                 profileQuery = { sql, params };
                 return [profileRows];
             },
@@ -59,11 +64,16 @@ test('groups screenings by movie and includes only public taken-seat data', asyn
 });
 
 test('loads only the authenticated customer profile through the registered pool', async () => {
-    profileRows = [{ id: 8, username: 'customer8' }];
+    profileRows = [{ id: 8, username: 'customer8', email: 'customer8@example.com' }];
 
-    assert.deepEqual(await userModel.getRegisteredProfile(8), profileRows[0]);
-    assert.equal(profileQuery.sql, 'SELECT id, username FROM users WHERE id = ?');
+    assert.deepEqual(await userModel.getRegisteredProfile(8), {
+        ...profileRows[0],
+        tickets: [],
+    });
+    assert.equal(profileQuery.sql, 'SELECT id, username, email FROM users WHERE id = ?');
     assert.deepEqual(profileQuery.params, [8]);
+    assert.match(ticketQuery.sql, /b\.user_id = \? AND b\.status = 'paid'/);
+    assert.deepEqual(ticketQuery.params, [8]);
 
     profileRows = [];
     assert.equal(await userModel.getRegisteredProfile(99), null);

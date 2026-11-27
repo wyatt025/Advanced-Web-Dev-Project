@@ -34,7 +34,8 @@ function LoginPage({ onSessionChange }) {
       const username = formData.get('username')
       const password = formData.get('password')
       if (isRegistering) {
-        await register(username, password)
+        const email = formData.get('email')
+        await register(username, email, password)
       } else {
         await login(username, password)
       }
@@ -108,6 +109,18 @@ function LoginPage({ onSessionChange }) {
                 required
               />
             </label>
+            {isRegistering && (
+              <label>
+                Email
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  maxLength={254}
+                  required
+                />
+              </label>
+            )}
             <label>
               Password
               <span className="account-form__password">

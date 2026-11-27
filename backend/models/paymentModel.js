@@ -57,7 +57,7 @@ function formatUtcDateTime(epochSeconds) {
 }
 
 const paymentModel = {
-    createPendingBooking({ id, screeningId, seatIds, email, checkoutExpiresAt }) {
+    createPendingBooking({ id, screeningId, seatIds, userId = null, email, checkoutExpiresAt }) {
         return transaction(async (connection) => {
             const [lockedScreenings] = await connection.execute(
                 `SELECT id FROM screenings
@@ -113,16 +113,16 @@ const paymentModel = {
             await connection.execute(
                 `INSERT INTO ticket_bookings
                     (id, screening_id, user_id, email, total_amount_cents, status, hold_expires_at)
-                 VALUES (?, ?, NULL, ?, ?, 'pending_payment', ?)`,
-                [id, screeningId, email, totalAmountCents, formatUtcDateTime(holdExpiresAt)]
+                 VALUES (?, ?, ?, ?, ?, 'pending_payment', ?)`,
+                [id, screeningId, userId, email, totalAmountCents, formatUtcDateTime(holdExpiresAt)]
             );
 
             for (const seatNumber of seats) {
                 await connection.execute(
                     `INSERT INTO reservations
                         (seatNumber, auditorium_id, user_id, screening_id, isPaid, booking_id)
-                     VALUES (?, ?, NULL, ?, FALSE, ?)`,
-                    [seatNumber, screening.auditoriumId, screeningId, id]
+                     VALUES (?, ?, ?, ?, FALSE, ?)`,
+                    [seatNumber, screening.auditoriumId, userId, screeningId, id]
                 );
             }
 

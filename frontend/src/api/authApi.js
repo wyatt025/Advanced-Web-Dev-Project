@@ -17,14 +17,14 @@ export async function login(username, password) {
     return response.json();
 }
 
-export async function register(username, password) {
+export async function register(username, email, password) {
     const response = await fetch('/api/auth/register', {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, email, password }),
     });
     const data = await response.json().catch(() => null);
     if (!response.ok) {
@@ -69,7 +69,8 @@ export async function getCurrentSession(signal) {
         throw new Error('Could not check the login session.');
     }
     const data = await response.json();
-if (!['admin', 'employee', 'user'].includes(data.role)) {
+if (!['admin', 'employee', 'user'].includes(data.role) ||
+    (data.email !== null && typeof data.email !== 'string')) {
     throw new Error('The server returned an invalid session response.');
 }
 return data;

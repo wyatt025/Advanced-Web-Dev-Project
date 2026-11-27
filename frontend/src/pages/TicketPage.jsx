@@ -28,7 +28,7 @@ function leavesSeatGap(seats) {
   )
 }
 
-function TicketPage() {
+function TicketPage({ session, sessionLoading, sessionError }) {
   const { movieId } = useParams()
   const requestKey = movieId
   const [movieResult, setMovieResult] = useState(null)
@@ -129,11 +129,12 @@ function TicketPage() {
     setIsCheckingOut(true)
 
     try {
-      const { url } = await startCheckout({
+      const checkoutRequest = {
         screeningId: Number(selectedScreening.id),
         seatIds: selectedSeats,
-        email,
-      })
+      }
+      if (!session) checkoutRequest.email = email
+      const { url } = await startCheckout(checkoutRequest)
       window.location.assign(url)
     } catch (error) {
       setCheckoutError(error.message || 'Could not start checkout.')
@@ -324,8 +325,11 @@ function TicketPage() {
           screening={selectedScreening}
           ticketPrice={movie.price}
           seatCount={selectedSeats.length}
-          email={email}
+          email={session?.email || email}
           onEmailChange={setEmail}
+          needsEmail={!session && !sessionLoading && !sessionError}
+          accountLoading={sessionLoading}
+          accountError={sessionError}
           onCheckout={handleCheckout}
           isCheckingOut={isCheckingOut}
           error={checkoutError}

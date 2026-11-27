@@ -7,10 +7,10 @@ async function getAccountForLogin(username) {
     return rows[0];
 }
 
-async function createRegisteredAccount(username, passwordHash) {
+async function createRegisteredAccount(username, email, passwordHash) {
     const [result] = await pools.auth.execute(
-        'INSERT INTO users (username, password) VALUES (?, ?)',
-        [username, passwordHash]
+        'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+        [username, email, passwordHash]
     );
     return { id: result.insertId, role: 'user' };
 }

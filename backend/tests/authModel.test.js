@@ -20,12 +20,12 @@ require.cache[dbPath] = {
 
 const { createRegisteredAccount, getAccountForLogin } = require('../models/auth_model');
 
-test('creates accounts using the deployed username/password columns and default user role', async () => {
-    const account = await createRegisteredAccount('customer', 'bcrypt-hash');
+test('creates accounts using username, email and password with the default user role', async () => {
+    const account = await createRegisteredAccount('customer', 'customer@example.com', 'bcrypt-hash');
 
     assert.deepEqual(account, { id: 23, role: 'user' });
-    assert.equal(calls[0].sql, 'INSERT INTO users (username, password) VALUES (?, ?)');
-    assert.deepEqual(calls[0].params, ['customer', 'bcrypt-hash']);
+    assert.equal(calls[0].sql, 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)');
+    assert.deepEqual(calls[0].params, ['customer', 'customer@example.com', 'bcrypt-hash']);
     assert.doesNotMatch(calls[0].sql, /role\s*[,)]/i);
 });
 

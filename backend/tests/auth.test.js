@@ -13,13 +13,13 @@ require.cache[authModelPath] = {
     filename: authModelPath,
     loaded: true,
     exports: {
-        async createRegisteredAccount(username, passwordHash) {
+        async createRegisteredAccount(username, email, passwordHash) {
             if (accounts.some((account) => account.username === username)) {
                 const error = new Error('Duplicate username');
                 error.code = 'ER_DUP_ENTRY';
                 throw error;
             }
-            const account = { id: accounts.length + 1, username, password: passwordHash, role: 'user' };
+            const account = { id: accounts.length + 1, username, email, password: passwordHash, role: 'user' };
             accounts.push(account);
             return { id: account.id, role: account.role };
         },
@@ -49,12 +49,17 @@ test('registers a username and allows it to log in with the created password', a
     const registration = await fetch(`${base}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: '  customer_1  ', password: 'secure-password-1' }),
+        body: JSON.stringify({
+            username: '  customer_1  ',
+            email: ' customer@example.com ',
+            password: 'secure-password-1',
+        }),
     });
     assert.equal(registration.status, 201);
     assert.deepEqual(await registration.json(), { role: 'user' });
     assert.match(registration.headers.get('set-cookie'), /authToken=.*HttpOnly/);
     assert.equal(accounts[0].username, 'customer_1');
+    assert.equal(accounts[0].email, 'customer@example.com');
     assert.notEqual(accounts[0].password, 'secure-password-1');
     assert.equal(await bcrypt.compare('secure-password-1', accounts[0].password), true);
 
@@ -82,8 +87,20 @@ test('registration rejects invalid or duplicate usernames', async (t) => {
         body: JSON.stringify(body),
     });
 
-    assert.equal((await post({ username: 'x', password: 'secure-password-1' })).status, 400);
-    const duplicate = await post({ username: 'customer_1', password: 'secure-password-1' });
+    assert.equal((await post({
+        username: 'x',
+        email: 'customer@example.com',
+        password: 'secure-password-1',
+    })).status, 400);
+    assert.equal((await post({
+        username: 'customer_2',
+        password: 'secure-password-1',
+    })).status, 400);
+    const duplicate = await post({
+        username: 'customer_1',
+        email: 'customer@example.com',
+        password: 'secure-password-1',
+    });
     assert.equal(duplicate.status, 409);
     assert.deepEqual(await duplicate.json(), { error: 'That username is already taken.' });
 });

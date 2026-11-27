@@ -2,15 +2,20 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { authCookieOptions } = require('./authCookie');
 const { createRegisteredAccount } = require('../models/auth_model');
+const { emailAddress } = require('../helpers/paymentSeats');
 
 async function register(req, res) {
     const { username, password } = req.body || {};
     const normalizedUsername = typeof username === 'string' ? username.trim() : '';
+    const email = emailAddress(req.body && req.body.email);
 
     if (!/^[A-Za-z0-9._-]{3,32}$/.test(normalizedUsername)) {
         return res.status(400).json({
             error: 'Username must be 3–32 characters and contain only letters, numbers, dots, underscores or hyphens.',
         });
+    }
+    if (!email) {
+        return res.status(400).json({ error: 'Enter a valid email address.' });
     }
     if (typeof password !== 'string' || password.length < 8 ||
         Buffer.byteLength(password, 'utf8') > 72) {
@@ -23,12 +28,15 @@ async function register(req, res) {
 
     try {
         const passwordHash = await bcrypt.hash(password, 10);
-        const user = await createRegisteredAccount(normalizedUsername, passwordHash);
+        const user = await createRegisteredAccount(normalizedUsername, email, passwordHash);
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '2h' });
         res.cookie('authToken', token, authCookieOptions);
         return res.status(201).json({ role: user.role });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
+            if (/email/i.test(error.sqlMessage || '')) {
+                return res.status(409).json({ error: 'That email address is already associated with an account.' });
+            }
             return res.status(409).json({ error: 'That username is already taken.' });
         }
         console.error('Registration failed:', error.code || 'UNKNOWN_ERROR');

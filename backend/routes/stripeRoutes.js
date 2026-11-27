@@ -2,11 +2,13 @@ const crypto = require('crypto');
 const express = require('express');
 const Stripe = require('stripe');
 const { checkOrigin } = require('../middleware/checkOrigin');
+const { optionalAuthenticate } = require('../middleware/token&roleAuth');
 const { HOLD_SECONDS, emailAddress } = require('../helpers/paymentSeats');
 
 function createStripeRouter({
     model,
     originCheck = checkOrigin,
+    authenticateOptional = optionalAuthenticate,
     stripeClient,
 } = {}) {
     const router = express.Router();
@@ -55,12 +57,22 @@ function createStripeRouter({
         }
     });
 
-    router.post('/checkout-sessions', originCheck, express.json(), async (req, res) => {
+    router.post('/checkout-sessions', originCheck, express.json(), authenticateOptional, async (req, res) => {
         const { screeningId, seatIds } = req.body || {};
-        const email = emailAddress(req.body && req.body.email);
         if (!Number.isSafeInteger(screeningId) || screeningId < 1 ||
-            !Array.isArray(seatIds) || seatIds.length === 0 || !email) {
+            !Array.isArray(seatIds) || seatIds.length === 0) {
             return res.status(400).json({ error: 'Choose seats and enter a valid email address.' });
+        }
+        const userId = req.user ? req.user.id : null;
+        const email = userId
+            ? emailAddress(req.user.email)
+            : emailAddress(req.body && req.body.email);
+        if (!email) {
+            return res.status(400).json({
+                error: userId
+                    ? 'Your account needs a valid email address before tickets can be purchased.'
+                    : 'Choose seats and enter a valid email address.',
+            });
         }
 
         let checkoutUrl;
@@ -89,6 +101,7 @@ function createStripeRouter({
                 id: bookingId,
                 screeningId,
                 seatIds,
+                userId,
                 email,
                 checkoutExpiresAt,
             });

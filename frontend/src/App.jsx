@@ -76,7 +76,9 @@ function App() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/movies/:movieId/tickets" element={<TicketPage />} />
+            <Route path="/movies/:movieId/tickets" element={
+              <TicketPage session={session} sessionLoading={sessionLoading} sessionError={sessionError} />
+            } />
             <Route path="/movies/:movieId" element={<MoviePage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/movies" element={<HomePage />} />

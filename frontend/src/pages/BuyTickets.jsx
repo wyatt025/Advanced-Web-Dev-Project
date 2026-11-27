@@ -4,6 +4,9 @@ export default function BuyTickets({
   seatCount,
   email,
   onEmailChange,
+  needsEmail,
+  accountLoading,
+  accountError,
   onCheckout,
   isCheckingOut,
   error,
@@ -15,15 +18,24 @@ export default function BuyTickets({
 
   return (
     <div className="ticket-summary__purchase">
-      <label className="ticket-purchase__email">
-        Email for your tickets
-        <input
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => onEmailChange(event.target.value)}
-        />
-      </label>
+      {needsEmail && (
+        <label className="ticket-purchase__email">
+          Email for your tickets
+          <input
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => onEmailChange(event.target.value)}
+          />
+        </label>
+      )}
+      {accountLoading && <p role="status">Checking your account...</p>}
+      {accountError && <p className="ticket-purchase__error" role="alert">{accountError}</p>}
+      {!needsEmail && !accountLoading && !accountError && !validEmail && (
+        <p className="ticket-purchase__error" role="alert">
+          Your account needs a valid email address before tickets can be purchased.
+        </p>
+      )}
       <p className="ticket-purchase__total">
         {seatCount > 0 && validPrice
           ? `Total: ${new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(totalPrice)}`
@@ -32,7 +44,8 @@ export default function BuyTickets({
       <button
         className="ticket-summary__continue"
         type="button"
-        disabled={!screening || seatCount === 0 || !validEmail || !validPrice || isCheckingOut}
+        disabled={!screening || seatCount === 0 || !validEmail || !validPrice || isCheckingOut ||
+          accountLoading || !!accountError}
         onClick={onCheckout}
       >
         {isCheckingOut ? 'Opening checkout...' : 'Continue to payment'}

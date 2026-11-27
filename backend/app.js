@@ -12,9 +12,9 @@ const stripeRouter = require('./routes/stripeRoutes');
 
 const port = process.env.PORT || 3001;
 
+app.use(cookieParser());
 app.use(stripeRouter);
 app.use(express.json());
-app.use(cookieParser());
 app.use(checkOrigin);
 
 const pools = require('./helpers/db'); 
@@ -28,7 +28,7 @@ app.post('/auth/logout', (req, res) => {
     return res.status(204).end();
 });
 app.get('/auth/me', authenticate, (req, res) => {
-    return res.json({ role: req.user.role });
+    return res.json({ role: req.user.role, email: req.user.email });
 });
 
 app.use('/admin', adminRouter);

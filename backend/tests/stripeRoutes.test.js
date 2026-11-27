@@ -1,6 +1,8 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
 const {
     emailAddress,
@@ -31,6 +33,9 @@ require.cache[dbPath] = {
             async getConnection() { return modelConnection; },
             async execute(sql, params) {
                 modelCalls.push({ sql, params });
+                if (sql.startsWith('SELECT id, role, email FROM users')) {
+                    return [[{ id: 23, role: 'user', email: 'account@example.com' }]];
+                }
                 return [{ affectedRows: 1 }];
             },
         },
@@ -42,12 +47,15 @@ process.env.STRIPE_SECRET_KEY = 'sk_test_placeholder';
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_placeholder';
 process.env.PUBLIC_URL = 'https://rio.example';
 process.env.FRONTEND_ORIGIN = 'https://rio.example';
+process.env.JWT_SECRET = 'stripe-test-secret';
 
 const signatureStripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const checkoutCalls = [];
+const pendingBookings = [];
 const processedEvents = [];
 const paymentModel = {
     async createPendingBooking(booking) {
+        pendingBookings.push(booking);
         return {
             id: booking.id,
             title: 'Example Movie',
@@ -100,6 +108,7 @@ const stripeRouter = require('../routes/stripeRoutes').createStripeRouter({
     stripeClient,
 });
 const app = express();
+app.use(cookieParser());
 app.use(stripeRouter);
 app.use(express.json());
 app.post('/other', (req, res) => res.json(req.body));
@@ -139,6 +148,7 @@ test('creates a temporary database hold under a screening lock before checkout',
         id: 'a7e4f8e1-0ab3-4f90-b8d2-70a6e45111e8',
         screeningId: 8,
         seatIds: [1, 2],
+        userId: 23,
         email: 'buyer@example.com',
         checkoutExpiresAt: 1800000000,
     });
@@ -154,8 +164,11 @@ test('creates a temporary database hold under a screening lock before checkout',
     assert.equal(screeningDetails.sql.includes('FOR UPDATE'), false);
     assert.equal(takenSeats.sql.includes('FOR UPDATE'), false);
     const bookingInsert = modelCalls.find((call) => call.sql?.includes('INSERT INTO ticket_bookings'));
-    assert.equal(bookingInsert.params[3], 2500);
-    assert.equal(modelCalls.filter((call) => call.sql?.includes('INSERT INTO reservations')).length, 2);
+    assert.equal(bookingInsert.params[2], 23);
+    assert.equal(bookingInsert.params[4], 2500);
+    const reservationInserts = modelCalls.filter((call) => call.sql?.includes('INSERT INTO reservations'));
+    assert.equal(reservationInserts.length, 2);
+    assert.equal(reservationInserts[0].params[2], 23);
     assert.ok(modelCalls.includes('commit'));
     assert.ok(modelCalls.includes('release'));
 });
@@ -295,6 +308,21 @@ test('starts checkout from a real screening id and persists the generated sessio
     assert.equal(checkoutCalls[0].line_items[0].quantity, 2);
     assert.equal(checkoutCalls[0].branding_settings.display_name, 'Rio Cinema');
     assert.equal(checkoutCalls[0].success_url.startsWith('https://rio.example/success?booking_id='), true);
+    assert.equal(pendingBookings[0].userId, null);
+    assert.equal(pendingBookings[0].email, 'buyer@example.com');
+
+    const accountCheckout = await fetch(`${base}/checkout-sessions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Origin: process.env.FRONTEND_ORIGIN,
+            Cookie: `authToken=${jwt.sign({ id: 23 }, process.env.JWT_SECRET)}`,
+        },
+        body: JSON.stringify({ screeningId: 8, seatIds: [3], email: 'wrong@example.com' }),
+    });
+    assert.equal(accountCheckout.status, 201);
+    assert.equal(pendingBookings[1].userId, 23);
+    assert.equal(pendingBookings[1].email, 'account@example.com');
 
     const booking = await fetch(`${base}/bookings/${result.bookingId}`);
     assert.deepEqual(await booking.json(), {
