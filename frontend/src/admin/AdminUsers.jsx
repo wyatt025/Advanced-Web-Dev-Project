@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createAdminUser, deleteAdminUser, getAdminUsers, updateAdminUser } from '../api/adminApi.js'
 import { formatScreeningDate } from '../pages/screeningDates.js'
+import { usernamePattern } from '../pages/usernamePattern.js'
 
 const roleLabels = { user: 'User', employee: 'Employee', admin: 'Admin' }
 
@@ -62,8 +63,7 @@ function UserForm({ user, requestConfirmation, onCancel, onSaved, onDelete }) {
     {error && <p role="alert">{error}</p>}
     <fieldset disabled={busy} className="admin-screening-form__fields">
       <div className="admin-user-form__fields">
-        {/* Matches the username characters and length accepted by registration. */}
-        <label className="admin-field">Username<input required minLength={3} maxLength={32} pattern="[A-Za-z0-9._\-]{3,32}" title="Use 3–32 letters, numbers, dots, underscores or hyphens." value={username} onChange={(event) => setUsername(event.target.value)} /></label>
+        <label className="admin-field">Username<input required minLength={3} maxLength={32} pattern={usernamePattern} title="Use 3–32 letters, numbers, dots, underscores or hyphens." value={username} onChange={(event) => setUsername(event.target.value)} /></label>
         <label className="admin-field">Email<input required type="email" maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} /></label>
         <label className="admin-field">Phone (optional)<input type="tel" maxLength={50} value={phone} onChange={(event) => setPhone(event.target.value)} /></label>
         <label className="admin-field">Address<input disabled placeholder="Not functional yet" /></label>
