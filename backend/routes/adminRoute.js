@@ -18,6 +18,7 @@ adminRouter.use(authenticate);
 adminRouter.use(requireRole('admin'));
 adminRouter.use('/screenings', require('./adminScreeningsRoute'));
 adminRouter.use('/reservations', require('./adminReservationsRoute'));
+adminRouter.use('/users', require('./adminUsersRoute'));
 
 adminRouter.get('/', async (req, res) => {
     try {
@@ -30,6 +31,9 @@ adminRouter.get('/', async (req, res) => {
 
 adminRouter.post('/', async (req, res) => {
     try {
+        if (req.body?.adminConfirmation !== 'ADMIN') {
+            return res.status(400).json({ error: 'Type ADMIN to confirm creating an administrator.' });
+        }
         if (!req.body || !req.body.name || !req.body.email || typeof req.body.password !== 'string' || !req.body.password) {
             return res.status(400).json({ error: 'Name, email and password are required' });
         }
@@ -66,13 +70,14 @@ adminRouter.put('/:id', async (req, res) => {
 // May fail: init.sql does not grant role_admin DELETE on users.
 adminRouter.delete('/:id', async (req, res) => {
     try {
-        const result = await adminModel.deleteAdmin(req.params.id);
+        const result = await adminModel.deleteAdmin(req.params.id, req.user.id);
         if (result) {
             res.json({ message: 'Admin deleted successfully' });
         } else {
             res.status(404).json({ error: 'Admin not found' });
         }
     } catch (err) {
+        if (err.code === 'USER_CONFLICT') return res.status(409).json({ error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
@@ -304,13 +309,14 @@ adminRouter.put('/employees/:id', async (req, res) => {
 // May fail: init.sql does not grant role_admin DELETE on users.
 adminRouter.delete('/employees/:id', async (req, res) => {
     try {
-        const result = await adminModel.deleteEmployee(req.params.id);
+        const result = await adminModel.deleteEmployee(req.params.id, req.user.id);
         if (result) {
             res.json({ message: 'Employee deleted successfully' });
         } else {
             res.status(404).json({ error: 'Employee not found' });
         }
     } catch (err) {
+        if (err.code === 'USER_CONFLICT') return res.status(409).json({ error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
@@ -319,13 +325,14 @@ adminRouter.delete('/employees/:id', async (req, res) => {
 // May fail: init.sql does not grant role_admin DELETE on users.
 adminRouter.delete('/users/:id', async (req, res) => {
     try {
-        const result = await adminModel.deleteUserById(req.params.id);
+        const result = await adminModel.deleteUserById(req.params.id, req.user.id);
         if (result) {
             res.json({ message: 'User deleted successfully' });
         } else {
             res.status(404).json({ error: 'User not found' });
         }
     } catch (err) {
+        if (err.code === 'USER_CONFLICT') return res.status(409).json({ error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
@@ -334,14 +341,14 @@ adminRouter.delete('/users/:id', async (req, res) => {
 adminRouter.delete(['/users/name/:name', '/users/username/:name'], async (req, res) => {
     try {
         // DB schema: users.name is not unique; the username path is retained for compatibility.
-        const result = await adminModel.deleteUserByName(req.params.name);
+        const result = await adminModel.deleteUserByName(req.params.name, req.user.id);
         if (result) {
             res.json({ message: 'User deleted successfully' });
         } else {
             res.status(404).json({ error: 'User not found' });
         }
     } catch (err) {
-        if (err.code === 'AMBIGUOUS_USER_NAME') {
+        if (err.code === 'AMBIGUOUS_USER_NAME' || err.code === 'USER_CONFLICT') {
             return res.status(409).json({ error: err.message });
         }
         res.status(500).json({ error: err.message });

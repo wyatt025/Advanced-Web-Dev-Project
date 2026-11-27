@@ -54,6 +54,22 @@ Admin-created reservations hold seats as unpaid bookings. Pending-payment
 bookings cannot be deleted from the admin interface. Deleting a paid booking
 does not issue a refund or notify the customer.
 
+# Admin user management
+
+For an existing database, apply `migrations/20261127_admin_users.sql` as a
+database administrator before deploying the user-management update. It grants
+the admin role user-management permissions; existing admin-reservation booking
+permissions are also required. Fresh databases receive the grants in `init.sql`.
+
+Admin-created registered accounts have no usable password until a future email
+verification and password-setup flow is implemented. The database stores the
+marker `!pending-password-setup`, not a password; login rejects that marker.
+Employee and admin passwords are generated and displayed once after creation;
+securely pass them to the account holder. Password changes are not implemented
+yet. Deleting a user can cascade-delete reservations, and does not refund paid
+bookings or notify customers. Deletion is blocked for pending-payment bookings
+and for the admin's own account.
+
 Configure these backend environment variables in Rahti:
 
 - `STRIPE_SECRET_KEY`

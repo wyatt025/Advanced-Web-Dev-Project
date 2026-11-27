@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
+const { PENDING_PASSWORD } = require('../helpers/accountSetup');
 
 process.env.JWT_SECRET = 'test-secret';
 
@@ -86,4 +87,19 @@ test('registration rejects invalid or duplicate usernames', async (t) => {
     const duplicate = await post({ username: 'customer_1', password: 'secure-password-1' });
     assert.equal(duplicate.status, 409);
     assert.deepEqual(await duplicate.json(), { error: 'That username is already taken.' });
+});
+
+test('accounts awaiting password setup cannot log in', async (t) => {
+    accounts = [{ id: 1, username: 'pending', password: PENDING_PASSWORD, role: 'user' }];
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise((resolve) => server.once('listening', resolve));
+    t.after(() => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())));
+    for (const password of [PENDING_PASSWORD, 'some-password']) {
+        const response = await fetch(`http://127.0.0.1:${server.address().port}/auth/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'pending', password }),
+        });
+        assert.equal(response.status, 401);
+        assert.equal(response.headers.get('set-cookie'), null);
+    }
 });

@@ -4,6 +4,7 @@ import { deleteMovie, getDashboardMetrics, getMovies } from '../api/adminApi'
 import AdminMovieForm from './AdminMovieForm.jsx'
 import AdminScreenings from './AdminScreenings.jsx'
 import AdminReservations from './AdminReservations.jsx'
+import AdminUsers from './AdminUsers.jsx'
 import '../pages/AdminDashboard.css'
 import '../pages/MoviePage.css'
 
@@ -22,7 +23,10 @@ function ConfirmationDialog({ confirmation, onDismiss }) {
   const [text, setText] = useState('')
   const [deleteConfirmed, setDeleteConfirmed] = useState(false)
   const isDelete = confirmation.kind === 'delete'
-  const isDeleteFinalStep = isDelete && deleteConfirmed
+  const isFinalStep = Boolean(confirmation.confirmText) && deleteConfirmed
+  const needsTypedConfirmation = isDelete || Boolean(confirmation.confirmText)
+  const confirmText = confirmation.confirmText || 'DELETE'
+  const showFinalStep = isDelete ? deleteConfirmed : isFinalStep
 
   useEffect(() => {
     dialog.current.showModal()
@@ -39,31 +43,31 @@ function ConfirmationDialog({ confirmation, onDismiss }) {
       }}
     >
       <h2 id="admin-confirmation-title">{confirmation.title}</h2>
-      {(confirmation.message || (isDelete && !isDeleteFinalStep)) && !isDeleteFinalStep && (
+      {(confirmation.message || (isDelete && !showFinalStep)) && !showFinalStep && (
         <p>{confirmation.message || 'Deleting this movie also permanently deletes its screenings and reservations.'}</p>
       )}
-      {isDeleteFinalStep && (
+      {showFinalStep && (
           <label className="admin-field">
-            Type DELETE to confirm.
+            Type {confirmText} to confirm.
             <input value={text} onChange={(event) => setText(event.target.value)} autoComplete="off" />
           </label>
       )}
       <div className="admin-confirmation__actions">
         <button
           type="button"
-          className={`admin-action admin-action--green${isDeleteFinalStep ? '' : ' admin-confirmation__yes'}`}
-          disabled={isDeleteFinalStep && text !== 'DELETE'}
+          className={`admin-action admin-action--green${showFinalStep ? '' : ' admin-confirmation__yes'}`}
+          disabled={showFinalStep && text !== confirmText}
           onClick={() => {
-            if (isDelete && !isDeleteFinalStep) {
+            if (needsTypedConfirmation && !showFinalStep) {
               setDeleteConfirmed(true)
               return
             }
             onDismiss()
             confirmation.onConfirm()
           }}
-        >{isDeleteFinalStep ? 'Confirm' : 'Yes'}</button>
+        >{showFinalStep ? 'Confirm' : 'Yes'}</button>
         <button type="button" className="admin-action admin-action--red" onClick={onDismiss}>
-          {isDeleteFinalStep ? 'Cancel' : 'No'}
+          {showFinalStep ? 'Cancel' : 'No'}
         </button>
       </div>
     </dialog>
@@ -76,6 +80,7 @@ function AdminDashboard() {
   const isMovies = pathname === '/admin/movies' || pathname === '/admin/movies/'
   const isScreenings = pathname === '/admin/screenings' || pathname === '/admin/screenings/'
   const isReservations = pathname === '/admin/reservations' || pathname === '/admin/reservations/'
+  const isUsers = pathname === '/admin/users' || pathname === '/admin/users/'
   const isDashboard = pathname === '/admin' || pathname === '/admin/'
   const [section, setSection] = useState('list')
   const [selected, setSelected] = useState(null)
@@ -271,7 +276,8 @@ function AdminDashboard() {
       )}
       {isScreenings && <AdminScreenings requestConfirmation={setConfirmation} />}
       {isReservations && <AdminReservations requestConfirmation={setConfirmation} />}
-      {!isDashboard && !isMovies && !isScreenings && !isReservations && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
+      {isUsers && <AdminUsers requestConfirmation={setConfirmation} />}
+      {!isDashboard && !isMovies && !isScreenings && !isReservations && !isUsers && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
       {confirmation && <ConfirmationDialog confirmation={confirmation} onDismiss={() => setConfirmation(null)} />}
     </main>
   )

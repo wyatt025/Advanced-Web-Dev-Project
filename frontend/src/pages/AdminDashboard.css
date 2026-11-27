@@ -158,6 +158,20 @@
 .admin-reservation-form h1 { line-height: 1.2; }
 .admin-reservation-form .admin-screening-form__fields > .admin-action { justify-self: start; }
 .admin-reservation-search-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 200px; overflow-y: auto; }
+.admin-reservation-screening-picker__controls { display: flex; align-items: end; flex-wrap: wrap; gap: 10px; }
+.admin-reservation-screening-picker__controls .admin-field { flex: 1 1 240px; }
+.admin-reservation-screening-results { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; border: 1px solid #41382e; border-radius: 6px; background: #12110f; }
+.admin-reservation-screening-results li + li { border-top: 1px solid #383027; }
+.admin-reservation-screening-results button { width: 100%; padding: 12px; border: 0; background: transparent; color: #dfd6c7; font: inherit; text-align: left; cursor: pointer; }
+.admin-reservation-screening-results button:hover, .admin-reservation-screening-results button:focus-visible { background: #211d19; color: var(--gold); }
+.admin-reservation-screening-results button:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.admin-user-form__fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.admin-user-form__roles { display: flex; flex-wrap: wrap; gap: 16px; border: 1px solid #41382e; border-radius: 6px; padding: 12px; }
+.admin-user-form__roles label { flex: 1; min-width: 90px; color: #dfd6c7; }
+.admin-user-form__roles input { accent-color: var(--gold); }
+@media (max-width: 600px) {
+  .admin-user-form__fields { grid-template-columns: 1fr; }
+}
 @media (max-width: 900px) {
   .admin-reservation-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-reservation-row .admin-movies__actions { grid-column: 1 / -1; }

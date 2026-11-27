@@ -50,12 +50,8 @@ async function updateUser(id, user, role) {
     return result.affectedRows ? getUserById(id, role) : undefined;
 }
 
-async function deleteUser(id, role) {
-    // DB schema: grant DELETE on users under role_admin for these routes.
-    const [result] = await pools.admin.execute(
-        'DELETE FROM users WHERE id = ? AND role = ?', [id, role]
-    );
-    return result.affectedRows > 0;
+async function deleteUser(id, role, actorId) {
+    return require('./adminUsers_model').removeUser(id, actorId, role);
 }
 
 async function getMovieById(id) {
@@ -69,7 +65,7 @@ const adminModel = {
     getAdminById: (id) => getUserById(id, 'admin'),
     createAdmin: (admin) => createUser(admin, 'admin'),
     updateAdmin: (id, admin) => updateUser(id, admin, 'admin'),
-    deleteAdmin: (id) => deleteUser(id, 'admin'),
+    deleteAdmin: (id, actorId) => deleteUser(id, 'admin', actorId),
 
 //----- Cinema/Auditorium Management -----------
     getOpenAuditoriums: async () => {
@@ -250,11 +246,11 @@ const adminModel = {
     getEmployeeById: (id) => getUserById(id, 'employee'),
     createEmployee: (employee) => createUser(employee, 'employee'),
     updateEmployee: (id, employee) => updateUser(id, employee, 'employee'),
-    deleteEmployee: (id) => deleteUser(id, 'employee'),
+    deleteEmployee: (id, actorId) => deleteUser(id, 'employee', actorId),
 
 //----- Registered Users Management -----------
-    deleteUserById: (id) => deleteUser(id, 'user'),
-    deleteUserByName: async (name) => {
+    deleteUserById: (id, actorId) => deleteUser(id, 'user', actorId),
+    deleteUserByName: async (name, actorId) => {
         // DB schema: users.name is not unique; reject ambiguous matches.
         const [rows] = await pools.admin.execute(
             'SELECT id FROM users WHERE name = ? AND role = ?', [name, 'user']
@@ -264,7 +260,7 @@ const adminModel = {
             error.code = 'AMBIGUOUS_USER_NAME';
             throw error;
         }
-        return rows.length === 1 ? deleteUser(rows[0].id, 'user') : false;
+        return rows.length === 1 ? deleteUser(rows[0].id, 'user', actorId) : false;
     },
 };
 
