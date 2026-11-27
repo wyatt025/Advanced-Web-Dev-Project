@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentSession, login, register } from '../api/authApi'
+import { usernamePattern } from './usernamePattern.js'
 import './LoginPage.css'
 
 function LoginPage({ onSessionChange }) {
@@ -102,7 +103,7 @@ function LoginPage({ onSessionChange }) {
                 autoComplete="username"
                 minLength={isRegistering ? 3 : undefined}
                 maxLength={32}
-                pattern={isRegistering ? '[A-Za-z0-9._-]{3,32}' : undefined}
+                pattern={isRegistering ? usernamePattern : undefined}
                 title={isRegistering
                   ? 'Use 3–32 letters, numbers, dots, underscores or hyphens.'
                   : undefined}
