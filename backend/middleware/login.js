@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { authCookieOptions } = require('./authCookie');
 const { getAccountForLogin } = require('../models/auth_model');
+const { PENDING_PASSWORD } = require('../helpers/accountSetup');
 
 async function login(req, res) {
     const { username, password } = req.body || {};
@@ -13,7 +14,7 @@ async function login(req, res) {
 
     try {
         const user = await getAccountForLogin(normalizedUsername);
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        if (!user || user.password === PENDING_PASSWORD || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
         if (!process.env.JWT_SECRET) {
