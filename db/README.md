@@ -57,6 +57,15 @@ Admin-created reservations hold seats as unpaid bookings. Pending-payment
 bookings cannot be deleted from the admin interface. Deleting a paid booking
 does not issue a refund or notify the customer.
 
+# Admin locations
+
+Location management uses the existing `role_admin` cinema and auditorium
+permissions and the admin reservation permissions. It lists open and closed
+locations. A theater's cinema cannot be changed after creation, and seat counts
+cannot change while the theater has reservations. Location deletion removes
+associated screenings and bookings without issuing refunds or notifications;
+it is blocked if a pending-payment booking exists.
+
 # Admin user management
 
 For an existing database, apply `migrations/20261127_admin_users.sql` as a

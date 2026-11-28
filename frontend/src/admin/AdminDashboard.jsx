@@ -5,6 +5,7 @@ import AdminMovieForm from './AdminMovieForm.jsx'
 import AdminScreenings from './AdminScreenings.jsx'
 import AdminReservations from './AdminReservations.jsx'
 import AdminUsers from './AdminUsers.jsx'
+import AdminLocations from './AdminLocations.jsx'
 import '../pages/AdminDashboard.css'
 import '../pages/MoviePage.css'
 
@@ -81,6 +82,7 @@ function AdminDashboard() {
   const isScreenings = pathname === '/admin/screenings' || pathname === '/admin/screenings/'
   const isReservations = pathname === '/admin/reservations' || pathname === '/admin/reservations/'
   const isUsers = pathname === '/admin/users' || pathname === '/admin/users/'
+  const isLocations = pathname === '/admin/locations' || pathname === '/admin/locations/'
   const isDashboard = pathname === '/admin' || pathname === '/admin/'
   const [section, setSection] = useState('list')
   const [selected, setSelected] = useState(null)
@@ -277,7 +279,8 @@ function AdminDashboard() {
       {isScreenings && <AdminScreenings requestConfirmation={setConfirmation} />}
       {isReservations && <AdminReservations requestConfirmation={setConfirmation} />}
       {isUsers && <AdminUsers requestConfirmation={setConfirmation} />}
-      {!isDashboard && !isMovies && !isScreenings && !isReservations && !isUsers && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
+      {isLocations && <AdminLocations requestConfirmation={setConfirmation} />}
+      {!isDashboard && !isMovies && !isScreenings && !isReservations && !isUsers && !isLocations && <section className="admin-panel"><h1>Coming later</h1><p>This admin section is not available yet.</p></section>}
       {confirmation && <ConfirmationDialog confirmation={confirmation} onDismiss={() => setConfirmation(null)} />}
     </main>
   )

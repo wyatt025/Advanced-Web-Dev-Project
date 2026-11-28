@@ -165,3 +165,25 @@ export const updateAdminUser = (id, user) => userRequest(`/${encodeURIComponent(
     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user),
 });
 export const deleteAdminUser = (id) => userRequest(`/${encodeURIComponent(id)}`, { method: 'DELETE' });
+
+async function locationRequest(path = '', options = {}) {
+    const response = await fetch(`/api/admin/locations${path}`, { cache: 'no-store', ...options });
+    if (!response.ok) {
+        if (response.status === 401) throw new Error('Your session has expired. Please log in again.');
+        if (response.status === 403) throw new Error('Admin access is required, or the request origin is not allowed.');
+        if ((response.headers.get('content-type') || '').includes('application/json')) {
+            const body = await response.json();
+            if (typeof body.error === 'string') throw new Error(body.error);
+        }
+        throw new Error(`Could not manage locations (HTTP ${response.status}).`);
+    }
+    return response.json();
+}
+export const getAdminLocations = () => locationRequest();
+export const createAdminLocation = (kind, data) => locationRequest(`/${kind}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+});
+export const updateAdminLocation = (kind, id, data) => locationRequest(`/${kind}/${encodeURIComponent(id)}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+});
+export const deleteAdminLocation = (kind, id) => locationRequest(`/${kind}/${encodeURIComponent(id)}`, { method: 'DELETE' });

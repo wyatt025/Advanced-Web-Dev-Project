@@ -18,6 +18,7 @@ adminRouter.use(authenticate);
 adminRouter.use(requireRole('admin'));
 adminRouter.use('/screenings', require('./adminScreeningsRoute'));
 adminRouter.use('/reservations', require('./adminReservationsRoute'));
+adminRouter.use('/locations', require('./adminLocationsRoute'));
 adminRouter.use('/users', require('./adminUsersRoute'));
 
 adminRouter.get('/', async (req, res) => {
