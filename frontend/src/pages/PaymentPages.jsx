@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getBooking } from '../api';
-import { formatScreeningDate } from './screeningDates.js';
+import { getBooking } from '../api/paymentApi.js';
+import { formatScreeningDate } from '../utils/screeningDates.js';
 import './PaymentPages.css';
 
 function formatAmount(cents) {

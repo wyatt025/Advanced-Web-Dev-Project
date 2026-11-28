@@ -4,8 +4,8 @@ import {
   getAdminScreenings, getAdminScreening, getMovies, getOpenAuditoriums,
   checkAdminScreenings, createAdminScreenings, updateAdminScreening, deleteAdminScreening,
 } from '../api/adminApi.js'
-import { formatScreeningDate, screeningDateParts, screeningLocalInput } from '../pages/screeningDates.js'
-import { regularSeats, reservedRegularSeatCount } from '../pages/screeningAvailability.js'
+import { formatScreeningDate, screeningDateParts, screeningLocalInput } from '../utils/screeningDates.js'
+import { regularSeats, reservedRegularSeatCount } from '../utils/screeningAvailability.js'
 import '../pages/TicketPage.css'
 
 function ScreeningForm({ screening, movies, auditoriums, requestConfirmation, onCancel, onSaved, onDelete }) {

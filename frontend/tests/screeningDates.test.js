@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { formatScreeningDate, screeningDateParts, screeningLocalInput } from '../src/pages/screeningDates.js'
+import { formatScreeningDate, screeningDateParts, screeningLocalInput } from '../src/utils/screeningDates.js'
 
 test('displays and edits screening times in Finland with day before month', () => {
   assert.equal(formatScreeningDate('2035-01-15T12:05:00Z'), '15/01/2035, 14:05')
