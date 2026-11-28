@@ -25,7 +25,7 @@ const registeredRows = {
         },
     ],
 };
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 require.cache[dbPath] = {
     id: dbPath,
     filename: dbPath,
@@ -42,7 +42,7 @@ require.cache[dbPath] = {
     },
 };
 
-const userModel = require('../models/user_model');
+const userModel = require('../models/user/registeredUserModel');
 
 test("returns the account email and groups only that account's paid ticket seats", async () => {
     calls.length = 0;

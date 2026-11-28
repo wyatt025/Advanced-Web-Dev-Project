@@ -1,7 +1,7 @@
 const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 let calls;
 let users;
 let pending;
@@ -24,7 +24,7 @@ require.cache[dbPath] = {
         execute: async (sql, params) => { calls.push({ sql, params }); return [sql.startsWith('SELECT') ? [] : { insertId: 7, affectedRows: 1 }]; },
     } },
 };
-const model = require('../models/adminUsers_model');
+const model = require('../models/admin/adminUsersModel');
 beforeEach(() => { calls = []; users = [{ id: 2, role: 'user' }]; pending = []; });
 
 test('lists only accounts in newest creation order', async () => {

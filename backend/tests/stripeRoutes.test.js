@@ -5,11 +5,11 @@ const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 const Stripe = require('stripe');
 const {
-    emailAddress,
     normalizeSeatIds,
     priceToCents,
     regularSeatNumbers,
-} = require('../helpers/paymentSeats');
+} = require('../helpers/payments/paymentSeats');
+const { emailAddress } = require('../helpers/validation/emailAddress');
 
 let modelQueryHandler = async () => [[]];
 const modelCalls = [];
@@ -23,7 +23,7 @@ const modelConnection = {
         return modelQueryHandler(sql, params);
     },
 };
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 require.cache[dbPath] = {
     id: dbPath,
     filename: dbPath,
@@ -41,7 +41,7 @@ require.cache[dbPath] = {
         },
     },
 };
-const paymentModelDb = require('../models/paymentModel');
+const paymentModelDb = require('../models/payments/paymentModel');
 
 process.env.STRIPE_SECRET_KEY = 'sk_test_placeholder';
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_placeholder';
@@ -103,7 +103,7 @@ const stripeClient = {
         constructEvent: (...args) => signatureStripe.webhooks.constructEvent(...args),
     },
 };
-const stripeRouter = require('../routes/stripeRoutes').createStripeRouter({
+const stripeRouter = require('../routes/payments/stripeRoutes').createStripeRouter({
     model: paymentModel,
     stripeClient,
 });

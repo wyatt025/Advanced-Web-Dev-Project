@@ -1,7 +1,7 @@
 const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 let calls;
 let bookingStatus;
 let taken;
@@ -24,7 +24,7 @@ require.cache[dbPath] = {
     id: dbPath, filename: dbPath, loaded: true,
     exports: { admin: { getConnection: async () => connection, execute: async (sql, params) => { calls.push({ sql, params }); return [listRows]; } } },
 };
-const model = require('../models/adminReservations_model');
+const model = require('../models/admin/adminReservationsModel');
 beforeEach(() => { calls = []; bookingStatus = 'unpaid'; taken = false; listRows = []; });
 const input = { name: 'Customer', email: 'customer@example.com', phone: null, userId: 2, screeningId: 5, seats: [1, 2] };
 

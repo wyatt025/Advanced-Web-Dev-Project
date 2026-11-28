@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 let conflict = false;
 let calls = [];
 const existing = { id: 3, title: 'Movie', runtime_minutes: 90, coming_soon: 0 };
@@ -26,7 +26,7 @@ require.cache[dbPath] = {
     loaded: true,
     exports: { admin: { getConnection: async () => connection } },
 };
-const adminModel = require('../models/admin_model');
+const adminModel = require('../models/admin/adminManagementModel');
 
 test('updating runtime locks auditoriums and checks conflicts using the new runtime', async () => {
     calls = [];

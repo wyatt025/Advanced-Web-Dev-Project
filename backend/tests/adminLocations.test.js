@@ -1,7 +1,7 @@
 const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 let calls;
 let pending;
 let reserved;
@@ -26,7 +26,7 @@ require.cache[dbPath] = {
     id: dbPath, filename: dbPath, loaded: true,
     exports: { admin: { getConnection: async () => connection, execute: connection.execute } },
 };
-const model = require('../models/adminLocations_model');
+const model = require('../models/admin/adminLocationsModel');
 beforeEach(() => { calls = []; pending = false; reserved = false; exists = true; });
 const theater = { name: 'Theater 1', isOpen: true, maxSeats: 40, accessibleSeats: 2 };
 

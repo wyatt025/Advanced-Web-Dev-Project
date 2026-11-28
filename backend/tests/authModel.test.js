@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
 const calls = [];
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 require.cache[dbPath] = {
     id: dbPath,
     filename: dbPath,
@@ -18,7 +18,7 @@ require.cache[dbPath] = {
     },
 };
 
-const { createRegisteredAccount, getAccountForLogin } = require('../models/auth_model');
+const { createRegisteredAccount, getAccountForLogin } = require('../models/authModel');
 
 test('creates accounts using username, email and password with the default user role', async () => {
     const account = await createRegisteredAccount('customer', 'customer@example.com', 'bcrypt-hash');

@@ -5,13 +5,13 @@ const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 
 process.env.JWT_SECRET = 'test-secret';
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 require.cache[dbPath] = {
     id: dbPath, filename: dbPath, loaded: true,
     exports: { auth: { execute: async (_, [id]) => [[{ id, role: id === 1 ? 'admin' : 'user' }]] } },
 };
 let checked;
-const modelPath = require.resolve('../models/adminScreenings_model');
+const modelPath = require.resolve('../models/admin/adminScreeningsModel');
 require.cache[modelPath] = {
     id: modelPath, filename: modelPath, loaded: true,
     exports: {
@@ -19,7 +19,7 @@ require.cache[modelPath] = {
         check: async (items, excludeId) => { checked = { items, excludeId }; },
     },
 };
-const { adminRouter } = require('../routes/adminRoute');
+const { adminRouter } = require('../routes/admin/adminRouter');
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
