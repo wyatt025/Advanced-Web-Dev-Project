@@ -1,0 +1,160 @@
+const express = require('express');
+const router = express.Router();
+const adminModel = require('../../models/admin/adminManagementModel');
+const { movieSearcher } = require('../../services/omdbService');
+const { omdbContentFilter } = require('../../helpers/movies/movieMapper');
+const { validateMovie, MovieValidationError } = require('../../helpers/movies/validateMovie');
+const { validateScreenings } = require('../../helpers/screenings/validateScreenings');
+
+//----- OMDb Search Routes -----
+
+router.get('/search', async (req, res) => {
+    try {
+        const { title } = req.query;
+
+        // Query parameters arrive as strings; the service expects a number.
+        const page = req.query.page === undefined ? 1 : Number(req.query.page);
+        const results = await movieSearcher.searchMovie(title, page);
+
+        return res.json(results);
+    } catch (err) {
+        if (err.code === 'INVALID_INPUT') {
+            return res.status(400).json({ error: err.message });
+        }
+        if (err.code === 'NOT_FOUND') {
+            return res.status(404).json({ error: 'No movies found' });
+        }
+        if (err.code === 'TIMEOUT') {
+            return res.status(504).json({ error: 'Movie search timed out' });
+        }
+
+        // Log only a safe code, not a URL that could contain the API key.
+        console.error('Movie search failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(502).json({ error: 'Movie search is unavailable' });
+    }
+});
+
+router.get('/details/:imdbID', async (req, res) => {
+    try {
+        const omdbData = await movieSearcher.getMovieById(req.params.imdbID);
+        const movie = omdbContentFilter(omdbData);
+
+        return res.json(movie);
+    } catch (err) {
+        if (err.code === 'INVALID_INPUT') {
+            return res.status(400).json({ error: 'Invalid IMDb ID' });
+        }
+        if (err.code === 'NOT_FOUND') {
+            return res.status(404).json({ error: 'Movie not found in OMDb' });
+        }
+        if (err.code === 'TIMEOUT') {
+            return res.status(504).json({ error: 'Movie lookup timed out' });
+        }
+        if (err.code === 'PROVIDER_ERROR' || err.code === 'NETWORK_ERROR') {
+            console.error('Movie lookup failed:', err.code);
+            return res.status(502).json({ error: 'Movie lookup is unavailable' });
+        }
+
+        console.error(
+            'Movie details lookup failed:',
+            err.code === 'CONFIG_ERROR' ? err.code : 'UNKNOWN_ERROR'
+        );
+        return res.status(500).json({ error: 'Could not load movie details' });
+    }
+});
+router.get('/', async (req, res) => {
+    try {
+        const result = await adminModel.getAllMovies();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/:id', async (req, res) => {
+    try {
+        const result = await adminModel.getMovieById(req.params.id);
+        if (result) {
+            res.json(result);
+        } else {
+            res.status(404).json({ error: 'Movie not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/', async (req, res) => {
+    try {
+        const movie = validateMovie(req.body);
+        const screenings = validateScreenings(req.body.screenings, movie.coming_soon);
+        const result = await adminModel.createMovieWithScreenings(movie, screenings);
+        return res.status(201).json(result);
+    } catch (err) {
+        if (err instanceof MovieValidationError) {
+            return res.status(400).json({ error: err.message });
+        }
+
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Movie has already been added' });
+        }
+        if (err.code === 'SCREENING_CONFLICT') {
+            return res.status(409).json({ error: err.message });
+        }
+        console.error('Movie creation failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not save movie' });
+    }
+});
+
+router.put('/:id', async (req, res) => {
+    try {
+        if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+            throw new MovieValidationError('Movie data must be an object');
+        }
+        const current = await adminModel.getMovieById(req.params.id);
+        if (!current) return res.status(404).json({ error: 'Movie not found' });
+        const existing = {
+            ...current,
+            price: current.price == null ? '' : String(current.price),
+            coming_soon: Boolean(current.coming_soon),
+            released_date: current.released_date instanceof Date
+                ? current.released_date.toISOString().slice(0, 10)
+                : current.released_date,
+        };
+        const movie = validateMovie({ ...existing, ...req.body });
+        const result = await adminModel.updateMovie(req.params.id, movie);
+        if (result) {
+            res.json(result);
+        } else {
+            res.status(404).json({ error: 'Movie not found' });
+        }
+    } catch (err) {
+        if (err instanceof MovieValidationError) {
+            return res.status(400).json({ error: err.message });
+        }
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: 'Movie has already been added' });
+        }
+        if (err.code === 'SCREENING_CONFLICT') {
+            return res.status(409).json({ error: err.message });
+        }
+        console.error('Movie update failed:', err.code || 'UNKNOWN_ERROR');
+        return res.status(500).json({ error: 'Could not update movie' });
+    }
+});
+
+router.delete('/:id', async (req, res) => {
+    try {
+        const result = await adminModel.deleteMovie(req.params.id);
+        if (result) {
+            res.json({ message: 'Movie deleted successfully' });
+        } else {
+            res.status(404).json({ error: 'Movie not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+module.exports = router;

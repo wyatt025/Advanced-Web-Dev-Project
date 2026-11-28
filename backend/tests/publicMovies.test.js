@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 let queryRows = [];
 let lastQuery;
 let profileRows = [];
@@ -31,7 +31,8 @@ require.cache[dbPath] = {
     },
 };
 
-const userModel = require('../models/user_model');
+const userModel = require('../models/user/publicUserModel');
+const registeredUserModel = require('../models/user/registeredUserModel');
 
 test('groups screenings by movie and includes only public taken-seat data', async () => {
     const movie = {
@@ -66,7 +67,7 @@ test('groups screenings by movie and includes only public taken-seat data', asyn
 test('loads only the authenticated customer profile through the registered pool', async () => {
     profileRows = [{ id: 8, username: 'customer8', email: 'customer8@example.com' }];
 
-    assert.deepEqual(await userModel.getRegisteredProfile(8), {
+    assert.deepEqual(await registeredUserModel.getRegisteredProfile(8), {
         ...profileRows[0],
         tickets: [],
     });
@@ -76,5 +77,5 @@ test('loads only the authenticated customer profile through the registered pool'
     assert.deepEqual(ticketQuery.params, [8]);
 
     profileRows = [];
-    assert.equal(await userModel.getRegisteredProfile(99), null);
+    assert.equal(await registeredUserModel.getRegisteredProfile(99), null);
 });

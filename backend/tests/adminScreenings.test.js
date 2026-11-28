@@ -1,9 +1,9 @@
 const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { DateTime } = require('luxon');
-const { validateScreenings } = require('../helpers/validateScreenings');
+const { validateScreenings } = require('../helpers/screenings/validateScreenings');
 
-const dbPath = require.resolve('../helpers/db');
+const dbPath = require.resolve('../config/database');
 let calls;
 let conflict;
 let reservations;
@@ -34,7 +34,7 @@ require.cache[dbPath] = {
     id: dbPath, filename: dbPath, loaded: true,
     exports: { admin: { getConnection: async () => connection } },
 };
-const model = require('../models/adminScreenings_model');
+const model = require('../models/admin/adminScreeningsModel');
 const screening = { movieId: 1, auditoriumId: 2, date: '2035-01-15 12:00:00' };
 beforeEach(() => {
     calls = [];
