@@ -6,7 +6,7 @@ import AdminScreenings from './AdminScreenings.jsx'
 import AdminReservations from './AdminReservations.jsx'
 import AdminUsers from './AdminUsers.jsx'
 import AdminLocations from './AdminLocations.jsx'
-import '../pages/AdminDashboard.css'
+import './AdminDashboard.css'
 import '../pages/MoviePage.css'
 
 const metrics = [

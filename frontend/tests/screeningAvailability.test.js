@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { hasAvailableRegularSeat, regularSeats, reservedRegularSeatCount } from '../src/pages/screeningAvailability.js'
+import { hasAvailableRegularSeat, regularSeats, reservedRegularSeatCount } from '../src/utils/screeningAvailability.js'
 
 test('regular seat numbers exclude accessible spaces and skip seat 13', () => {
   const screening = { seatCapacity: 25, accessibleSeatCount: 10 }

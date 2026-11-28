@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { usernamePattern } from '../src/pages/usernamePattern.js'
+import { usernamePattern } from '../src/utils/usernamePattern.js'
 
 test('username pattern is valid in HTML Unicode-set mode and matches complete usernames', () => {
   const pattern = new RegExp(`^(?:${usernamePattern})$`, 'v')

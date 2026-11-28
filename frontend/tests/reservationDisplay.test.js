@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { summarizeReservationSeats } from '../src/pages/reservationDisplay.js'
+import { summarizeReservationSeats } from '../src/utils/reservationDisplay.js'
 
 test('reservation list shows at most three seats and an overflow indicator', () => {
   assert.equal(summarizeReservationSeats([]), 'None')

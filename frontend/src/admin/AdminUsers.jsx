@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createAdminUser, deleteAdminUser, getAdminUsers, updateAdminUser } from '../api/adminApi.js'
-import { formatScreeningDate } from '../pages/screeningDates.js'
-import { usernamePattern } from '../pages/usernamePattern.js'
+import { formatScreeningDate } from '../utils/screeningDates.js'
+import { usernamePattern } from '../utils/usernamePattern.js'
 
 const roleLabels = { user: 'User', employee: 'Employee', admin: 'Admin' }
 

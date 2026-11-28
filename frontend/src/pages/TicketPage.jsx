@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { startCheckout } from '../api.js'
+import { startCheckout } from '../api/paymentApi.js'
 import { getMovie } from '../api/moviesApi.js'
 import BuyTickets from './BuyTickets.jsx'
-import { hasAvailableRegularSeat, regularSeats } from './screeningAvailability.js'
-import { formatScreeningDate } from './screeningDates.js'
+import { hasAvailableRegularSeat, regularSeats } from '../utils/screeningAvailability.js'
+import { formatScreeningDate } from '../utils/screeningDates.js'
 import './TicketPage.css'
 
 const seatsPerRow = 10

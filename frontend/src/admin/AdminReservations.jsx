@@ -4,9 +4,9 @@ import {
   getAdminReservations, searchReservationUsers, createAdminReservation, deleteAdminReservation,
   getAdminScreenings, getAdminScreening,
 } from '../api/adminApi.js'
-import { formatScreeningDate } from '../pages/screeningDates.js'
-import { regularSeats } from '../pages/screeningAvailability.js'
-import { summarizeReservationSeats } from '../pages/reservationDisplay.js'
+import { formatScreeningDate } from '../utils/screeningDates.js'
+import { regularSeats } from '../utils/screeningAvailability.js'
+import { summarizeReservationSeats } from '../utils/reservationDisplay.js'
 import '../pages/TicketPage.css'
 
 const statusLabels = {

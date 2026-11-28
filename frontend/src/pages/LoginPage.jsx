@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCurrentSession, login, register } from '../api/authApi'
-import { usernamePattern } from './usernamePattern.js'
+import { usernamePattern } from '../utils/usernamePattern.js'
 import './LoginPage.css'
 
 function LoginPage({ onSessionChange }) {

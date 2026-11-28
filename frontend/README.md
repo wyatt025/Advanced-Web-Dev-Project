@@ -2,6 +2,15 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
+## Source organization
+
+- `src/admin/` contains the admin components and their admin-specific styles.
+- `src/api/` contains API clients, including the payment and booking client.
+- `src/utils/` contains shared display, screening, and username helpers used
+  by both public pages and admin components.
+- `tests/` contains frontend utility tests, which can be run from this
+  folder with `node --test`.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
